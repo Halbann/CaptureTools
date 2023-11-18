@@ -3,10 +3,11 @@ using System.Collections;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
+using System.Reflection;
 
 using UnityEngine;
-using UnityEngine.Audio;
-using System.Reflection;
+
+using CaptureTools.Integration;
 
 namespace CaptureTools
 {
@@ -116,7 +117,6 @@ namespace CaptureTools
             if (HighLogic.LoadedScene == GameScenes.LOADING)
                 return;
 
-
             // Serialisation.
 
             kspRoot = KSPUtil.ApplicationRootPath;
@@ -149,6 +149,7 @@ namespace CaptureTools
 
             CameraToolsCheck();
             BD.BDArmouryCheck();
+            Scatterer.Check();
 
             // Trace.
             TraceRecorder.recordedFrames = 0;
@@ -542,10 +543,12 @@ namespace CaptureTools
 
             // Main
             settings.SetValue("mainCaptureAudio", mainCaptureAudio, true);
+            settings.SetValue("audioOnly", audioOnly, true);
             //settings.SetValue("positionSmoothing", positionSmoothing, true);
             settings.SetValue("mainSmoothTime", mainSmoothTime, true);
             settings.SetValue("mainAspectRatio", mainAspectRatio, true);
             settings.SetValue("mainHeight", mainHeight, true);
+            settings.SetValue("drawUIOnMain", drawUIOnMain, true);
 
             // Main smoothing multipliers.
             settings.SetValue("mainPositionSmoothTime", mainPositionSmoothTime, true);
@@ -608,10 +611,12 @@ namespace CaptureTools
 
             // Main
             settings.TryGetValue("mainCaptureAudio", ref mainCaptureAudio);
+            settings.TryGetValue("audioOnly", ref audioOnly);
             //settings.TryGetValue("positionSmoothing", ref positionSmoothing);
             settings.TryGetValue("mainSmoothTime", ref mainSmoothTime);
             settings.TryGetValue("mainAspectRatio", ref mainAspectRatio);
             settings.TryGetValue("mainHeight", ref mainHeight);
+            settings.TryGetValue("drawUIOnMain", ref drawUIOnMain);
 
             // Main smoothing multipliers.
             settings.TryGetValue("mainPositionSmoothTime", ref mainPositionSmoothTime);

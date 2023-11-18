@@ -1,8 +1,11 @@
 // FFmpegOut - FFmpeg video encoding plugin for Unity
 // https://github.com/keijiro/KlakNDI
 
-using UnityEngine;
+using System;
 using System.Collections;
+
+using UnityEngine;
+using KSP.UI;
 
 namespace FFmpegOut
 {
@@ -44,6 +47,7 @@ namespace FFmpegOut
         public string outputName = "";
         public int CRF = 15;
         public string path = "";
+        public bool drawMainUI = false;
 
         #endregion
 
@@ -92,7 +96,7 @@ namespace FFmpegOut
 
         private void Awake()
         {
-            
+
         }
 
         void OnValidate()
@@ -130,7 +134,7 @@ namespace FFmpegOut
         IEnumerator Start()
         {
             // Sync with FFmpeg pipe thread at the end of every frame.
-            for (var eof = new WaitForEndOfFrame();;)
+            for (var eof = new WaitForEndOfFrame(); ;)
             {
                 yield return eof;
                 _session?.CompletePushFrames();
@@ -149,7 +153,7 @@ namespace FFmpegOut
                 // object to keep frames presented on the screen.
                 if (camera.targetTexture == null)
                 {
-                    _tempRT = new RenderTexture(_width, _height, 24, GetTargetFormat(camera)); 
+                    _tempRT = new RenderTexture(_width, _height, 24, GetTargetFormat(camera));
                     _tempRT.antiAliasing = GetAntiAliasingLevel(camera);
                     camera.targetTexture = _tempRT;
                     _blitter = Blitter.CreateInstance(camera);
@@ -205,6 +209,47 @@ namespace FFmpegOut
 
                 // Compensate the time delay.
                 _frameCount += Mathf.FloorToInt(gap * _frameRate);
+            }
+        }
+
+        #endregion
+
+        #region Capture Tools Flight GUI
+
+        private static int lastUIRenderFrame = -1;
+
+        void OnGUI()
+        {
+            if (!drawMainUI)
+                return;
+
+            if (Event.current.type != EventType.Repaint)
+                return;
+
+            if (!name.Contains("Camera 00"))
+                return;
+
+            UpdateDrawUI();
+
+            if (lastUIRenderFrame != Time.frameCount && UIMasterController.Instance.IsUIShowing)
+            {
+                lastUIRenderFrame = Time.frameCount;
+                UIMainCamera.Camera.Render();
+            }
+        }
+
+        void UpdateDrawUI()
+        {
+            if (!name.Contains("Camera 00"))
+                return;
+
+            if (UIMasterController.Instance.IsUIShowing)
+            {
+                var camera = GetComponent<Camera>();
+                UIMainCamera.Camera.enabled = false;
+                UIMainCamera.Camera.targetTexture = camera.targetTexture;
+                UIMainCamera.Camera.Render();
+                UIMainCamera.Camera.targetTexture = null;
             }
         }
 

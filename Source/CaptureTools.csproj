@@ -84,6 +84,18 @@
       <HintPath>G:\Games\Steam Library\steamapps\common\KSP_win64\KSP_x64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>G:\Games\Steam Library\steamapps\common\KSP_win64\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>G:\Games\Steam Library\steamapps\common\KSP_win64\KSP_x64_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>G:\Games\Steam Library\steamapps\common\KSP_win64\KSP_x64_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioRecorder\CaptureAudioUnity.cs" />
@@ -103,6 +115,7 @@
     <Compile Include="FFmpegOut\FrameRateController.cs" />
     <Compile Include="FFmpegOut\Internal\Blitter.cs" />
     <Compile Include="FFmpegOut\Internal\FFmpegPipe.cs" />
+    <Compile Include="Integration\Scatterer.cs" />
     <Compile Include="Trace.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI.cs" />

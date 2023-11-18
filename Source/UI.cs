@@ -1,11 +1,8 @@
-﻿using EdyCommonTools;
-using KSP.UI.Screens;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using KSP.UI.Screens;
 using UnityEngine;
 
 namespace CaptureTools
@@ -40,8 +37,12 @@ namespace CaptureTools
 
         //private static bool addedAppLauncherButton = false;
         private ApplicationLauncherButton appLauncherButton;
-        public static bool guiEnabled = false;
+        public bool guiEnabled = false;
         private bool guiHidden = false;
+
+        public bool showClapper = false;
+        private static GUIStyle clapperStyle;
+
 
         #region GUI
 
@@ -52,6 +53,9 @@ namespace CaptureTools
 
             DrawMulticamGUI();
             DrawMainCamGUI();
+
+            if (CaptureMain && mainCaptureAudio && audioOnly && showClapper)
+                DrawClapper();
         }
 
         public void DrawGUI() =>
@@ -223,8 +227,19 @@ namespace CaptureTools
                 if (RecordButton(CaptureMain, mainCaptureStartFrame, playbackFramerate, previewOnly))
                     CaptureMain = !CaptureMain;
 
+                GUILayout.BeginHorizontal();
+
                 if (!CaptureMain)
+                {
                     mainCaptureAudio = GUILayout.Toggle(mainCaptureAudio, "Capture Audio");
+
+                    if (mainCaptureAudio)
+                        audioOnly = GUILayout.Toggle(audioOnly, "Audio Only");
+
+                    drawUIOnMain = GUILayout.Toggle(drawUIOnMain, "Draw UI");
+                }
+
+                GUILayout.EndHorizontal();
 
                 // We can't change these settings while recording.
                 if (!CaptureMain && !fullRes)
@@ -670,6 +685,21 @@ namespace CaptureTools
             return GUILayout.Button(recordingButtonText);
         }
 
+        private void DrawClapper()
+        {
+            if (clapperStyle == null)
+            {
+                clapperStyle = new GUIStyle(GUI.skin.label);
+                clapperStyle.fontSize = 256 * (Screen.height / 540);
+                clapperStyle.fontStyle = FontStyle.Bold;
+                clapperStyle.alignment = TextAnchor.MiddleCenter;
+            }
+
+            int offset = 5 * (Screen.height / 540);
+
+            GUI.Label(new Rect(0 + offset, 0 + offset, Screen.width, Screen.height), "<color=black>SYNC</color>", clapperStyle);
+            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "SYNC", clapperStyle);
+        }
 
         public void AddToolbarButton()
         {

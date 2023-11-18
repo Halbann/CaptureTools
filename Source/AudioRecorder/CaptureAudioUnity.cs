@@ -18,7 +18,6 @@ namespace CaptureTools
         private static float startTime = 0f;
         private static float unscaledStartTime = 0f;
 
-
         // Start is called before the first frame update
         internal void Start()
         {
@@ -37,13 +36,22 @@ namespace CaptureTools
                     if (path == "")
                         path = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
-                    recorder.BeginRecording(path);
                     recording = true;
+
+                    try
+                    {
+                        recorder.BeginRecording(path);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError("[CaptureTools]: Couldn't create audio file. Probably permissions related.");
+                        Debug.LogError(e);
+                    }
                 }
                 else
                 {
-                    recorder.EndRecording();
                     recording = false;
+                    recorder.EndRecording();
                 }
             }
         }

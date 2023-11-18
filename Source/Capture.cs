@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Collections;
 
 using UnityEngine;
 
 using FFmpegOut;
-using System.Collections;
+using CaptureTools.Integration;
 
 namespace CaptureTools
 {
@@ -89,6 +90,7 @@ namespace CaptureTools
             public Vessel vesselTarget;
             public RenderTexture rt;
             public Quaternion smoothingVelocity;
+            public bool captureInitialised = false;
 
             public PartModule BDAIModule;
             public bool hasBDAI = false;
@@ -109,10 +111,13 @@ namespace CaptureTools
         private GameObject mainCameraParent;
         private GameObject mainCameraPivot;
         private bool usingPivot = false;
+        private bool mainCaptureInitialised = false;
 
         public static int mainHeight = 1080;
         public static Vector2 mainAspectRatio = new Vector2(16f, 9f);
         public static bool mainCaptureAudio = true;
+        public static bool audioOnly = false;
+        public static bool drawUIOnMain = false;
 
         // Position.
         private Vessel lastVessel;
@@ -181,7 +186,7 @@ namespace CaptureTools
             foreach (string cameraName in cameraNames)
             {
                 var camObject = new GameObject();
-                camObject.name = "";
+                camObject.name = "Capture Tools Main - " + cameraName;
                 camObject.transform.position = Vector3.zero;
 
                 Camera cam = camObject.AddComponent<Camera>();
@@ -255,57 +260,13 @@ namespace CaptureTools
             smoothParentSpeed = new Quaternion(0, 0, 0, 0);
             mainFOVvelocity = 0;
 
-            if (!previewOnly)
-            {
-                // Start recording.
-                CameraCapture camCap = main.gameObject.AddComponent<CameraCapture>();
-                camCap.frameRate = playbackFramerate;
-                camCap.width = renderWidth;
-                camCap.height = renderHeight;
-                camCap.outputName = "";
-                camCap.CRF = Mathf.RoundToInt(CRF);
-
-                string path = Path.GetFullPath(Path.Combine(FilePath, "Main"));
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
-
-                camCap.path = path;
-
-                if (mainCaptureAudio)
-                {
-                    // Audio
-                    //main.gameObject.AddComponent<AudioListener>();
-                    //mainAudioCapture = main.gameObject.AddComponent<CaptureAudio>();
-                    //mainAudioCapture.path = Path.Combine(path, DateTime.Now.ToString("yyyy_MM_dd_HHmmss"));
-
-                    /*var mainListener = Camera.allCameras.FirstOrDefault(c => c.name == "Camera 00")?.GetComponentInChildren<AudioListener>();
-                    if (mainListener != null)
-                        mainListener.enabled = false;
-
-                    var newListener = main.gameObject.AddComponent<AudioListener>();
-                    newListener.velocityUpdateMode = mainListener.velocityUpdateMode;
-
-                    audioListenerVolumeDefault = AudioListener.volume;
-                    AudioListener.volume = 0.5f;*/
-
-                    audioListener = flightCamera.GetComponentInChildren<AudioListener>();
-                    if (audioListener != null)
-                    {
-                        audioListenerParent = audioListener.transform.parent;
-                        audioListener.transform.parent = main.transform;
-                    }
-
-                    mainAudioCapture = main.gameObject.AddComponent<CaptureAudioUnity>();
-                    mainAudioCapture.path = Path.Combine(path, DateTime.Now.ToString("yyyy_MM_dd_HHmmss"));
-                }
-            }
-
             BlockHighlighters(true);
             InitPreviewMaterial();
 
             lastVessel = FlightGlobals.ActiveVessel;
             lastVesselLate = FlightGlobals.ActiveVessel;
             mainCaptureStartFrame = Time.frameCount;
+            mainCaptureInitialised = false;
             Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
 
             if (isFlight)
@@ -535,6 +496,20 @@ namespace CaptureTools
             {
                 cam.fieldOfView = Mathf.SmoothDamp(cam.fieldOfView, flightCamera.fieldOfView, 
                     ref mainFOVvelocity, mainFOVsmoothTime * mainSmoothTime, mainFOVmaxSpeed, deltaTime);
+            }
+
+
+            // Lazy initialisation of Camera Capture.
+
+            if (!mainCaptureInitialised)
+            {
+                mainCaptureInitialised = true;
+
+                if (Scatterer.loaded)
+                    Scatterer.SetupCameras(main, mainCameras[1], false);
+
+                if (!previewOnly)
+                    InitialiseCameraCapture(main, true, "");
             }
         }
 
@@ -767,7 +742,6 @@ namespace CaptureTools
             //vesselTargets.Add(null);
             //targetVectorsLerped.Add(Vector3.zero);
 
-
             var setup = new MultiSetup
             {
                 vessel = vessel,
@@ -780,60 +754,59 @@ namespace CaptureTools
 
             if (BD.BDLoaded)
             {
+                // Get the AI module so we can check the target.
                 PartModule BDAIModule;
                 setup.hasBDAI = BD.TryGetBDAI(vessel, out BDAIModule);
                 setup.BDAIModule = BDAIModule;
+
+                // Add the competition overlay to the main camera.
+                //BD.AddTestCanvas(main);
             }
 
-            multiSetups.Add(setup);
+            if (Scatterer.loaded)
+                Scatterer.SetupCameras(main, vesselCameras[1]);
 
-            if (!previewOnly)
+            multiSetups.Add(setup);
+        }
+
+        private void InitialiseCameraCapture(Camera cam, bool mainCamera, string fileName)
+        {
+            string path = Path.GetFullPath(Path.Combine(FilePath, mainCamera ? "Main" : "Multicam"));
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            if (!mainCaptureAudio || !audioOnly)
             {
                 // Start recording.
-                CameraCapture camCap = main.gameObject.AddComponent<CameraCapture>();
+                CameraCapture camCap = cam.gameObject.AddComponent<CameraCapture>();
                 camCap.frameRate = Mathf.RoundToInt(playbackFramerate);
-                camCap.width = renderWidth;
-                camCap.height = renderHeight;
-                //camCap.outputName = Regex.Replace(vessel.GetDisplayName(), "[^a-zA-Z0-9_]+", "_", RegexOptions.Compiled);
-                camCap.outputName = vessel.persistentId.ToString();
+                camCap.width = cam.targetTexture.width;
+                camCap.height = cam.targetTexture.height;
+                camCap.outputName = fileName;
                 camCap.CRF = Mathf.RoundToInt(CRF);
-
-                string path = Path.GetFullPath(Path.Combine(FilePath, "Multicam"));
-                if (!Directory.Exists(path))
-                    Directory.CreateDirectory(path);
+                camCap.drawMainUI = mainCamera && drawUIOnMain;
 
                 camCap.path = path;
             }
+
+            if (mainCamera && mainCaptureAudio)
+            {
+                if (audioOnly)
+                {
+                    StartCoroutine(Clapper());
+                }
+
+                audioListener = FlightCamera.fetch.mainCamera.GetComponentInChildren<AudioListener>();
+                if (audioListener != null)
+                {
+                    audioListenerParent = audioListener.transform.parent;
+                    audioListener.transform.parent = cam.transform;
+                }
+
+                mainAudioCapture = cam.gameObject.AddComponent<CaptureAudioUnity>();
+                mainAudioCapture.path = Path.Combine(path, DateTime.Now.ToString("yyyy_MM_dd_HHmmss"));
+            }
         }
-
-        /*void RemoveVessel(Vessel vessel)
-        {
-            int index = vesselCameraSetups.FindIndex(s => s.Item1 == vessel);
-
-            // Stop the recording.
-            try
-            {
-                vesselCameraSetups[index].Item2[2].GetComponent<CameraCapture>().enabled = false;
-            }
-            catch { }
-
-            // Destroy cameras.
-
-            foreach (var cam in vesselCameraSetups[index].Item2)
-            {
-                if (cam == null) continue;
-                Destroy(cam.gameObject);
-            }
-
-            // Remove each element of the setup from the lists.
-            vesselCameraSetups.RemoveAt(index);
-            comOffsets.RemoveAt(index);
-            vesselTargets.RemoveAt(index);
-            targetVectorsLerped.RemoveAt(index);
-            renderTextures.RemoveAt(index);
-
-            // The objects should be destroyed by the garbage collector now?
-        }*/
 
         void RemoveVessel(Vessel vessel)
         {
@@ -923,6 +896,7 @@ namespace CaptureTools
                 main = vesselCameras[2];
 
                 if (main == null) continue;
+
                 vesselCameras.ForEach(c => c.cullingMask &= ~(1 << 8));
 
                 target = GetMulticamTarget(setup);
@@ -962,6 +936,8 @@ namespace CaptureTools
                     targetVec = (vessel.situation == Vessel.Situations.ORBITING) ? vessel.ReferenceTransform.up : velocity;
                     Vector3 currentTargetVector = main.transform.position == Vector3.zero ? targetVec : setup.targetVectorLerped.normalized;
 
+                    // TODO MAKE SURE THIS LAZY INIT IS WORKING. I DON'T THINK IT IS.
+
                     setup.targetVectorLerped = Vector3.Slerp(currentTargetVector, targetVec, multicamSmoothing * 50 * Time.deltaTime * 0.3f);
 
                     targetVec = setup.targetVectorLerped;
@@ -981,6 +957,15 @@ namespace CaptureTools
                 foreach (var cam in vesselCameras)
                 {
                     cam.fieldOfView = cameraFov;
+                }
+
+
+                // Lazy initialisation for the Camera Capture.
+
+                if (!setup.captureInitialised)
+                {
+                    setup.captureInitialised = true;
+                    InitialiseCameraCapture(main, false, vessel.persistentId.ToString());
                 }
             }
 
@@ -1212,5 +1197,34 @@ namespace CaptureTools
         }
 
         #endregion
+
+        #region Clapper
+
+        IEnumerator Clapper()
+        {
+            yield return null;
+
+            showClapper = true;
+            
+            // Play a loud sound for syncing.
+            var clip = GameDatabase.Instance.GetAudioClip("CaptureTools/Sounds/clapper");
+
+            if (clip != null)
+            {
+                var audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.clip = clip;
+                audioSource.volume = 1f;
+                audioSource.spatialBlend = 0f;
+                audioSource.PlayOneShot(clip);
+                Destroy(audioSource, clip.length);
+            }
+
+            yield return new WaitForSecondsRealtime(0.25f);
+
+            showClapper = false;
+        }
+
+        #endregion
+
     }
 }

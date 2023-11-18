@@ -21,3 +21,11 @@ https://github.com/keijiro
 ------------------------------------------
 
 FFmpeg is not part of Capture Tools and is redistributed separately under the GPL. A full copy of the GPL is provided.
+
+------------------------------------------
+
+The sync sound comes from Headphaze on freesound.org:
+https://freesound.org/people/Headphaze/
+
+Under this license:
+https://creativecommons.org/licenses/by/4.0/

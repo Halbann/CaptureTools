@@ -75,7 +75,7 @@ namespace UnityEditor.Recorder
             int numbits = 32;
             int samplerate = AudioSettings.outputSampleRate;
 
-            Debug.Log("Closing file");
+            //Debug.Log("Closing file");
 
             long pos = closewriter.BaseStream.Length;
             closewriter.Seek(0, SeekOrigin.Begin);
@@ -103,7 +103,7 @@ namespace UnityEditor.Recorder
         /// <param name="data">The buffer of audio samples to add.</param>
         public void AddSamples(NativeArray<float> data)
         {
-            Debug.Log("Writing wav chunk " + data.Length);
+            //Debug.Log("Writing wav chunk " + data.Length);
 
             if (_binwriter == null)
                 return;
