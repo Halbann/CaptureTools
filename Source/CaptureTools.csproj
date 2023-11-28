@@ -101,6 +101,7 @@
     <Compile Include="AudioRecorder\CaptureAudioUnity.cs" />
     <Compile Include="AudioRecorder\AudioInput.cs" />
     <Compile Include="AudioRecorder\AudioRecorder.cs" />
+    <Compile Include="Debug.cs" />
     <Compile Include="Integration\BD.cs" />
     <Compile Include="BuildAnimation.cs" />
     <Compile Include="Capture.cs" />

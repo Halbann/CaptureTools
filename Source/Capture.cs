@@ -63,10 +63,6 @@ namespace CaptureTools
         // Multi
 
         private List<GameObject> cameras = new List<GameObject>();
-        //private List<Tuple<Vessel, List<Camera>>> vesselCameraSetups = new List<Tuple<Vessel, List<Camera>>>();
-        //private List<Vector3> comOffsets = new List<Vector3>();
-        //private List<Vessel> vesselTargets = new List<Vessel>();
-        //private List<Vector3> targetVectorsLerped = new List<Vector3>();
         private static List<RenderTexture> renderTextures = new List<RenderTexture>();
         private int renderWidth;
         private int renderHeight;
@@ -80,20 +76,26 @@ namespace CaptureTools
         public static float cameraSlide = 15f;
         public static float multicamSmoothing = 0.3f;
         public static float shipLimit = 4;
+        public static float bdTargetDelay = 3;
 
         public class MultiSetup
         {
             public Vessel vessel;
             public List<Camera> cameras;
             public Vector3 comOffset;
-            public Vector3 targetVectorLerped;
-            public Vessel vesselTarget;
             public RenderTexture rt;
             public Quaternion smoothingVelocity;
             public bool captureInitialised = false;
 
+            public Vector3 targetVectorLerped;
+            public Vessel vesselTarget;
+
             public PartModule BDAIModule;
             public bool hasBDAI = false;
+            public float BDTargetTime = 0;
+            public Vessel BDTarget;
+
+            public Transform debugTransform;
         }
 
         private List<MultiSetup> multiSetups = new List<MultiSetup>();
@@ -119,10 +121,14 @@ namespace CaptureTools
         public static bool audioOnly = false;
         public static bool drawUIOnMain = false;
 
+        private static float minSmoothTime = 0.025f;
+        private Quaternion lastRotation = Quaternion.identity;
+
         // Position.
         private Vessel lastVessel;
         private Vector3 smoothedPosition;
         public static float positionSmoothing = 1f;
+        public static bool positionSmoothingEnabled = true;
 
         public static float mainMaxSpeed = 100f;
         public static float positionMaxSpeed = 100f;
@@ -259,12 +265,12 @@ namespace CaptureTools
             smoothPivotSpeed = new Quaternion(0, 0, 0, 0);
             smoothParentSpeed = new Quaternion(0, 0, 0, 0);
             mainFOVvelocity = 0;
+            lastRotation = mainCameraPivot.transform.rotation;
 
             BlockHighlighters(true);
             InitPreviewMaterial();
 
             lastVessel = FlightGlobals.ActiveVessel;
-            lastVesselLate = FlightGlobals.ActiveVessel;
             mainCaptureStartFrame = Time.frameCount;
             mainCaptureInitialised = false;
             Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
@@ -272,10 +278,39 @@ namespace CaptureTools
             if (isFlight)
             {
                 GameEvents.onFloatingOriginShift.Add(OnFloatingOriginShift);
-                GameEvents.onVesselSituationChange.Add(OnVesselSituationChange);
-                GameEvents.onKrakensbaneDisengage.Add(OnKrakensbaneDisengage);
-                GameEvents.onKrakensbaneEngage.Add(OnKrakensbaneEngage);
                 GameEvents.onVesselChange.Add(OnVesselChange);
+                //GameEvents.onVesselSituationChange.Add(OnVesselSituationChange);
+                //GameEvents.onKrakensbaneDisengage.Add(OnKrakensbaneDisengage);
+                //GameEvents.onKrakensbaneEngage.Add(OnKrakensbaneEngage);
+            }
+
+            if (useFixedUpdate)
+                StartCoroutine(MainFixedUpdate());
+
+            // debug transforms
+
+            var pivotDebug = mainCameraPivot.AddComponent<DrawTransform>();
+            pivotDebug.text = "Main Pivot";
+            pivotDebug.scale = 6;
+
+            var parentDebug = mainCameraParent.AddComponent<DrawTransform>();
+            parentDebug.text = "Main Parent";
+            parentDebug.scale = 3;
+
+            var mainDebug = main.gameObject.AddComponent<DrawTransform>();
+            mainDebug.text = "Main Camera";
+            mainDebug.scale = 3;
+        }
+
+        private IEnumerator MainFixedUpdate()
+        {
+            // Use the timing of WaitForFixedUpdate to run main camera updates.
+            // This is preferred to FixedUpdate because it runs after all FixedUpdate calls and physics movement.
+
+            while (captureMain)
+            {
+                UpdateMainCamera();
+                yield return new WaitForFixedUpdate();
             }
         }
 
@@ -283,7 +318,7 @@ namespace CaptureTools
         {
             //UpdateMainCamera(0f);
 
-            if (useFixedUpdate)
+            if (useFixedUpdate && positionSmoothingEnabled)
                 StartCoroutine(MainHandleVesselChange());
         }
 
@@ -306,15 +341,17 @@ namespace CaptureTools
             mainRenderTexture.Release();
             mainRenderTexture = null;
 
+            Destroy(mainCameraPivot);
+
             BlockHighlighters(false);
 
             if (captureSceneIsFlight)
             {
                 GameEvents.onFloatingOriginShift.Remove(OnFloatingOriginShift);
-                GameEvents.onVesselSituationChange.Remove(OnVesselSituationChange);
-                GameEvents.onKrakensbaneDisengage.Remove(OnKrakensbaneDisengage);
-                GameEvents.onKrakensbaneEngage.Remove(OnKrakensbaneEngage);
                 GameEvents.onVesselChange.Remove(OnVesselChange);
+                //GameEvents.onVesselSituationChange.Remove(OnVesselSituationChange);
+                //GameEvents.onKrakensbaneDisengage.Remove(OnKrakensbaneDisengage);
+                //GameEvents.onKrakensbaneEngage.Remove(OnKrakensbaneEngage);
             }
 
             Time.captureFramerate = 0;
@@ -337,6 +374,9 @@ namespace CaptureTools
                 if (audioListener != null)
                     audioListener.transform.parent = audioListenerParent;
             }
+
+            //TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, UpdateMainCamera);
+            //TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, UpdateMainCameraFixed);
         }
 
         private static Camera GetEditorCamera()
@@ -390,51 +430,60 @@ namespace CaptureTools
                 float currentDistance = mainCameraParent.transform.localPosition.z;
                 float targetDistance = flightCamera.transform.parent.localPosition.z;
                 float smoothedDistance = Mathf.SmoothDamp(currentDistance, targetDistance, ref smoothDistanceSpeed,
-                                       mainSmoothTime * distanceSmoothTime, mainDistanceMaxSpeed, deltaTime);
+                                       Mathf.Max(mainSmoothTime * distanceSmoothTime, minSmoothTime), mainDistanceMaxSpeed, deltaTime);
                 mainCameraParent.transform.localPosition = new Vector3(0, 0, smoothedDistance);
 
 
                 // Pivot position. Follows the centre of the active vessel.
-
-                transitionalSpeed = Mathf.SmoothDamp(transitionalSpeed, 0, ref transitionalSpeedVelocity, 
-                    transitionalSpeedSmoothTime * mainSmoothTime, transitionalSpeedMaxSpeed, deltaTime);
 
                 Vector3 current = smoothedPosition;
                 Vector3 target = flightCamera.transform.parent.parent.position;
                 Vector3 toTarget = target - current;
                 Vector3 toTargetActual = target - mainCameraPivot.transform.position;
 
-                float error = toTarget.magnitude;
-                speedIntegral += error * deltaTime;
-
-                if (error < 5f)
-                    speedIntegral = 0;
-
-                if (isFlight)
+                if (positionSmoothingEnabled)
                 {
-                    bool flying = active.situation == Vessel.Situations.FLYING || active.situation == Vessel.Situations.LANDED;
-                    float activeSpeed = flying ? (float)active.srf_velocity.magnitude : active.rb_velocity.magnitude;
-                    positionMaxSpeed = Mathf.Max(speedIntegral * speedIntegralGain, 100, transitionalSpeed, activeSpeed * 1.5f, mainVelocity.magnitude);
+                    transitionalSpeed = Mathf.SmoothDamp(transitionalSpeed, 0, ref transitionalSpeedVelocity, 
+                        transitionalSpeedSmoothTime * mainSmoothTime, transitionalSpeedMaxSpeed, deltaTime);
+
+                    float error = toTarget.magnitude;
+                    speedIntegral += error * deltaTime;
+
+                    if (error < 5f)
+                        speedIntegral = 0;
+
+                    if (isFlight)
+                    {
+                        bool flying = active.situation == Vessel.Situations.FLYING || active.situation == Vessel.Situations.LANDED;
+                        float activeSpeed = flying ? (float)active.srf_velocity.magnitude : active.rb_velocity.magnitude;
+                        positionMaxSpeed = Mathf.Max(speedIntegral * speedIntegralGain, 100, transitionalSpeed, activeSpeed * 1.5f, mainVelocity.magnitude);
+                    }
+
+                    // Scale with velocity such that the error is never more than currentDistance
+                    //float mainPosSmoothTimeActual = mainPositionSmoothTime / Mathf.Max(toTargetActual.magnitude, 1);
+
+                    //float mainPosSmoothTimeActual = mainPositionSmoothTime / Mathf.Max(activeSpeed, 1);
+                    //float mainPosSmoothTimeActual = Mathf.Abs(currentDistance) * mainPositionSmoothTime / activeSpeed;
+
+                    smoothedPosition = Vector3.SmoothDamp(current, target, ref mainVelocity,
+                        Mathf.Max(mainPositionSmoothTime * mainSmoothTime, minSmoothTime), positionMaxSpeed, deltaTime);
+
+                    mainCameraPivot.transform.position = smoothedPosition;
+                    //mainCameraPivot.transform.position = Vector3.Lerp(smoothedPosition, target, 1f - positionSmoothing);
                 }
-
-                // Scale with velocity such that the error is never more than currentDistance
-                //float mainPosSmoothTimeActual = mainPositionSmoothTime / Mathf.Max(toTargetActual.magnitude, 1);
-
-                //float mainPosSmoothTimeActual = mainPositionSmoothTime / Mathf.Max(activeSpeed, 1);
-                //float mainPosSmoothTimeActual = Mathf.Abs(currentDistance) * mainPositionSmoothTime / activeSpeed;
-
-                smoothedPosition = Vector3.SmoothDamp(current, target, ref mainVelocity,
-                    mainPositionSmoothTime * mainSmoothTime, positionMaxSpeed, deltaTime);
-
-                mainCameraPivot.transform.position = Vector3.Lerp(smoothedPosition, target, 1f - positionSmoothing);
+                else
+                {
+                    mainCameraPivot.transform.position = target;
+                }
 
 
                 // Orbit around the pivot. Right click and drag.
 
-                Quaternion currentRot = mainCameraPivot.transform.rotation;
+                //Quaternion currentRot = mainCameraPivot.transform.rotation;
+                Quaternion currentRot = lastRotation;
                 Quaternion targetRot = flightCamera.transform.parent.parent.rotation;
 
-                if (isFlight)
+                if (isFlight && positionSmoothingEnabled)
                 {
                     Vector3 up = active.situation == Vessel.Situations.ORBITING ? main.transform.up : FlightCamera.fetch.upAxis;
                     Vector3 toTargetVelocity = Vector3.Slerp(toTargetActual.normalized, active.rb_velocity.normalized, 0.5f);
@@ -444,14 +493,17 @@ namespace CaptureTools
                 }
 
                 mainCameraPivot.transform.rotation = SmoothDampQ(currentRot, targetRot, 
-                    ref smoothPivotSpeed, mainSmoothTime * pivotSmoothTime, mainMaxSpeed, deltaTime);
+                    ref smoothPivotSpeed, Mathf.Max(mainSmoothTime * pivotSmoothTime, minSmoothTime), mainMaxSpeed, deltaTime);
+
+                lastRotation = mainCameraPivot.transform.rotation;
+
 
                 // Pan. Middle mouse.
 
                 Quaternion currentParentRot = mainCameraParent.transform.localRotation;
                 Quaternion targetParentRot = flightCamera.transform.parent.localRotation;
                 Quaternion smoothedParentRot = SmoothDampQ(currentParentRot, targetParentRot, 
-                    ref smoothParentSpeed, mainSmoothTime * panSmoothTime, mainMaxSpeed, deltaTime);
+                    ref smoothParentSpeed, Mathf.Max(mainSmoothTime * panSmoothTime, minSmoothTime), mainMaxSpeed, deltaTime);
 
                 mainCameraParent.transform.localRotation = smoothedParentRot;
             }
@@ -479,10 +531,10 @@ namespace CaptureTools
                     // Follow the absolute position and rotation of the flight camera.
 
                     main.transform.position = Vector3.SmoothDamp(main.transform.position, flightCamera.transform.position,
-                        ref mainVelocity, mainSmoothTime * mainPositionSmoothTime, positionMaxSpeed, deltaTime);
+                        ref mainVelocity, Mathf.Max(mainSmoothTime * mainPositionSmoothTime, minSmoothTime), positionMaxSpeed, deltaTime);
 
                     main.transform.rotation = SmoothDampQ(main.transform.rotation, flightCamera.transform.rotation,
-                        ref smoothParentSpeed, mainSmoothTime * panSmoothTime, mainMaxSpeed, deltaTime);
+                        ref smoothParentSpeed, Mathf.Max(mainSmoothTime * panSmoothTime, minSmoothTime), mainMaxSpeed, deltaTime);
                 }
             }
 
@@ -495,7 +547,7 @@ namespace CaptureTools
             foreach (var cam in mainCameras)
             {
                 cam.fieldOfView = Mathf.SmoothDamp(cam.fieldOfView, flightCamera.fieldOfView, 
-                    ref mainFOVvelocity, mainFOVsmoothTime * mainSmoothTime, mainFOVmaxSpeed, deltaTime);
+                    ref mainFOVvelocity, Mathf.Max(mainFOVsmoothTime * mainSmoothTime, minSmoothTime), mainFOVmaxSpeed, deltaTime);
             }
 
 
@@ -528,18 +580,6 @@ namespace CaptureTools
             lastVessel = FlightGlobals.ActiveVessel;
         }
 
-        Vessel lastVesselLate;
-
-        //private void UpdateMainCameraLate()
-        //{
-        //    if (lastVesselLate != FlightGlobals.ActiveVessel)
-        //    {
-        //        UpdateMainCamera(0f);
-        //    }
-
-        //    lastVesselLate = FlightGlobals.ActiveVessel;
-        //}
-
         private void ResetCamera()
         {
             Camera main = mainCameras[2];
@@ -571,11 +611,13 @@ namespace CaptureTools
             if (mainCameraPivot == null)
                 return;
 
+            if (!positionSmoothingEnabled)
+                return;
+
             switch (FlightGlobals.ActiveVessel.situation)
             {
                 case Vessel.Situations.FLYING:
                 case Vessel.Situations.LANDED:
-                    //mainCameraPivot.transform.position -= offset;
                     smoothedPosition -= offset;
                     smoothedPosition -= nonFrame;
                     break;
@@ -592,7 +634,7 @@ namespace CaptureTools
             //Debug.Log($"[CaptureTools]: OnFloatingOriginShift - offset: {offset} - nonframe: {nonFrame}");
         }
 
-        Vector3 debugKrakensbaneLatestEngage = Vector3.zero;
+        /*Vector3 debugKrakensbaneLatestEngage = Vector3.zero;
         Vector3 debugKrakensbaneLatestDisengage = Vector3.zero;
 
         private void OnKrakensbaneEngage(Vector3d data)
@@ -618,7 +660,7 @@ namespace CaptureTools
         private void OnVesselSituationChange(GameEvents.HostedFromToAction<Vessel, Vessel.Situations> data)
         {
             Debug.Log($"[CaptureTools]: OnVesselSituationChange host: {data.host} from: {data.from} to: {data.to}");
-        }
+        }*/
 
         #endregion
 
@@ -660,6 +702,10 @@ namespace CaptureTools
             multicamCaptureStartFrame = Time.frameCount;
             Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
             multicamUp = FlightCamera.fetch == null ? Vector3.up : FlightCamera.fetch.getReferenceFrame() * Vector3.up;
+
+
+            if (useFixedUpdate)
+                StartCoroutine(MultiFixedUpdate());
         }
 
         private void StopMultiCapture()
@@ -677,6 +723,8 @@ namespace CaptureTools
 
             QualitySettings.vSyncCount = originalVSyncCount;
             Application.targetFrameRate = originalTargetFrameRate;
+
+            multiSetups.ForEach(s => Destroy(s.debugTransform.gameObject));
         }
 
         void SetupVessel(Vessel vessel)
@@ -849,6 +897,17 @@ namespace CaptureTools
                 && v.IsControllable;
         }
 
+        private IEnumerator MultiFixedUpdate()
+        {
+            while (captureMulti)
+            {
+                UpdateMultiCaptureFixed();
+                UpdateMultiCapture();
+
+                yield return new WaitForFixedUpdate();
+            }
+        }
+
         private void UpdateMultiCapture()
         {
             Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
@@ -901,7 +960,7 @@ namespace CaptureTools
 
                 target = GetMulticamTarget(setup);
 
-                vesselCoM = vessel.ReferenceTransform.TransformPoint(setup.comOffset);
+                vesselCoM = vessel.vesselTransform.TransformPoint(vessel.localCoM);
 
                 if (target != null)
                 {
@@ -959,6 +1018,17 @@ namespace CaptureTools
                     cam.fieldOfView = cameraFov;
                 }
 
+                //debug transform
+                if (setup.debugTransform == null)
+                {
+                    setup.debugTransform = new GameObject("Multicam Transform - " + setup.vessel.name).transform;
+                    var debug = setup.debugTransform.gameObject.AddComponent<DrawTransform>();
+                    debug.text = setup.vessel.name;
+                    debug.scale = 3;
+                    debug.enabled = false;
+                }
+
+                setup.debugTransform.position = vesselCoM;
 
                 // Lazy initialisation for the Camera Capture.
 
@@ -1036,7 +1106,18 @@ namespace CaptureTools
                 {
                     target = (Vessel)BD.bdTargetField.GetValue(setup.BDAIModule);
 
-                    if (target != null)
+                    // We want to add a latency of 3 seconds to the BD target.
+                    // This is so we can always see it for a few seconds after it's been destroyed.
+
+                    if (target != setup.BDTarget)
+                    {
+                        setup.BDTarget = target;
+                        setup.BDTargetTime = Time.time;
+                    }
+
+                    if (Time.time - setup.BDTargetTime < 3)
+                        return setup.vesselTarget;
+                    else if (target != null)
                         return target;
                 }
             }

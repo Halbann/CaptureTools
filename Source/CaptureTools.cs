@@ -8,6 +8,7 @@ using System.Reflection;
 using UnityEngine;
 
 using CaptureTools.Integration;
+using KSP.UI;
 
 namespace CaptureTools
 {
@@ -181,8 +182,18 @@ namespace CaptureTools
                 }
 
                 if (CaptureMain)
+                {
                     UpdateMainCamera();
+                }
             }
+            // Pretty sure I don't need UpdateMainCameraLate anymore.
+            /*else
+            {
+                if (CaptureMain)
+                {
+                    UpdateMainCameraLate();
+                }
+            }*/
 
             //if (useFixedUpdate && CaptureMain)
             //    UpdateMainCameraLate();
@@ -196,8 +207,11 @@ namespace CaptureTools
             if (CaptureMain && HighLogic.LoadedSceneIsFlight)
                 UpdateMainCameraFixed();
 
-            if (useFixedUpdate)
+            // Not using FixedUpdate for fixed camera updates anymore. Using WaitForFixedUpdate instead.
+
+            /*if (useFixedUpdate)
             {
+
                 if (CaptureMulti)
                 {
                     UpdateMultiCaptureFixed();
@@ -206,7 +220,7 @@ namespace CaptureTools
 
                 if (CaptureMain)
                     UpdateMainCamera();
-            }
+            }*/
 
             if (capturingTrace)
                 TraceFixedUpdate();
@@ -220,9 +234,22 @@ namespace CaptureTools
 
             // UI
 
-            if (Input.GetKeyDown(toggleUIKeycode))
+            if (!(Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(toggleUIKeycode))
                 ToggleGui();
 
+
+            bool alt = Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr);
+
+            // Start main capture keybind.
+            if ((Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(toggleUIKeycode))
+            {
+                Debug.Log("[CaptureTools]: Pressed record button");
+
+                CaptureMain = !CaptureMain;
+
+                if (!guiEnabled && UIMasterController.Instance.IsUIShowing)
+                    ToggleGui();
+            }
 
             // Stop all capture.
 
@@ -304,6 +331,15 @@ namespace CaptureTools
 
             if (autosaveCoroutine != null)
                 StopCoroutine(autosaveCoroutine);
+
+
+            // Stop capture.
+
+            if (CaptureMain)
+                CaptureMain = false;
+
+            if (CaptureMulti)
+                CaptureMulti = false;
         }
 
         #endregion
@@ -552,6 +588,7 @@ namespace CaptureTools
 
             // Main smoothing multipliers.
             settings.SetValue("mainPositionSmoothTime", mainPositionSmoothTime, true);
+            settings.SetValue("positionSmoothingEnabled", positionSmoothingEnabled, true);
             settings.SetValue("pivotSmoothTime", pivotSmoothTime, true);
             settings.SetValue("panSmoothTime", panSmoothTime, true);
             settings.SetValue("distanceSmoothTime", distanceSmoothTime, true);
@@ -566,6 +603,7 @@ namespace CaptureTools
             settings.SetValue("cameraSlide", cameraSlide, true);
             settings.SetValue("cameraDistance", cameraDistance, true);
             settings.SetValue("multicamSmoothing", multicamSmoothing, true);
+            settings.SetValue("bdTargetDelay", bdTargetDelay, true);
 
             // Trace
             //settings.SetValue("traceFramerateSlider", traceFramerateSlider, true);
@@ -620,6 +658,7 @@ namespace CaptureTools
 
             // Main smoothing multipliers.
             settings.TryGetValue("mainPositionSmoothTime", ref mainPositionSmoothTime);
+            settings.TryGetValue("positionSmoothingEnabled", ref positionSmoothingEnabled);
             settings.TryGetValue("pivotSmoothTime", ref pivotSmoothTime);
             settings.TryGetValue("panSmoothTime", ref panSmoothTime);
             settings.TryGetValue("distanceSmoothTime", ref distanceSmoothTime);
@@ -634,6 +673,7 @@ namespace CaptureTools
             settings.TryGetValue("cameraSlide", ref cameraSlide);
             settings.TryGetValue("cameraDistance", ref cameraDistance);
             settings.TryGetValue("multicamSmoothing", ref multicamSmoothing);
+            settings.TryGetValue("bdTargetDelay", ref bdTargetDelay);
 
             // Trace
             //settings.TryGetValue("traceFramerateSlider", ref traceFramerateSlider);

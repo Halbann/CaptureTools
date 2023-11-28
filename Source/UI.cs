@@ -300,7 +300,7 @@ namespace CaptureTools
                 if (showMainSmoothingSection)
                 {
                     GUILayout.BeginVertical(boxStyle);
-                    SettingSlider("Position", ref mainPositionSmoothTime, 0.01f, 2f, 2);
+                    SettingSliderToggle("Position", ref mainPositionSmoothTime, 0.01f, 2f, 2, ref positionSmoothingEnabled);
                     SettingSlider("Pivot", ref pivotSmoothTime, 0.01f, 2f, 2);
                     SettingSlider("Pan", ref panSmoothTime, 0.01f, 2f, 2);
                     SettingSlider("Distance", ref distanceSmoothTime, 0.01f, 2f, 2);
@@ -646,6 +646,36 @@ namespace CaptureTools
                 setting = 0;
 
             update = update || (old != setting);
+
+            GUILayout.Space(3);
+            GUILayout.EndHorizontal();
+        }
+
+        void SettingSliderToggle(string name, ref float setting, float min, float max, int rounding, ref bool toggle)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Space(3);
+
+            toggle = GUILayout.Toggle(toggle, "", GUILayout.Width(12));
+
+            bool guiEnabled = GUI.enabled;
+            if (!toggle)
+                GUI.enabled = false;
+
+            if (name != "")
+                GUILayout.Label(name, GUILayout.Width(54));
+
+            // Slider
+            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, min, max), rounding);
+
+            // Box
+            string text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), textBoxStyle, GUILayout.Width(38));
+            if (float.TryParse(text, out float result))
+                setting = result;
+            else if (text == "")
+                setting = 0;
+
+            GUI.enabled = guiEnabled;
 
             GUILayout.Space(3);
             GUILayout.EndHorizontal();
