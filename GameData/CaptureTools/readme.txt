@@ -11,6 +11,11 @@ https://halban.gumroad.com/l/CaptureTools
 
 - Fixed a bug that was causing the main and multi cameras to trail one physics update behind their target positions. This is what was causing fast vessels to sometimes leave the frame in multicam views with PRE installed; main camera tracking should also be much tighter now at high speeds.
 
+- Revamped and refactored multicam camera movement to smoothly transition between states and targets while keeping both vessels in frame at all times. The movement should look more similar to the main camera.
+
+- Fixed a bug where multicam would always record even when 'Preview Only' was enabled.
+
+
 ## 1.2.0
 
 - Added integration with Scatterer to support Scatterer's TAA/SMAA and sunlight colour tinting in main cam and multi cam outputs.
