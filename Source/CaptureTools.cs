@@ -177,7 +177,7 @@ namespace CaptureTools
             {
                 if (CaptureMulti)
                 {
-                    UpdateMultiCaptureFixed();
+                    //UpdateMultiCaptureFixed();
                     UpdateMultiCapture();
                 }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -82,12 +82,16 @@ namespace CaptureTools
         {
             public Vessel vessel;
             public List<Camera> cameras;
-            public Vector3 comOffset;
+            //public Vector3 comOffset;
             public RenderTexture rt;
-            public Quaternion smoothingVelocity;
             public bool captureInitialised = false;
 
-            public Vector3 targetVectorLerped;
+            public Transform pivot;
+            public Quaternion pivotVel = new Quaternion(0, 0, 0, 0);
+
+            public Vector3 posVelocity = Vector3.zero;
+            public Quaternion rotVelocity = new Quaternion(0, 0, 0, 0);
+
             public Vessel vesselTarget;
 
             public PartModule BDAIModule;
@@ -96,6 +100,19 @@ namespace CaptureTools
             public Vessel BDTarget;
 
             public Transform debugTransform;
+
+            public void Dispose()
+            {
+                cameras.ForEach(c => Destroy(c.gameObject));
+                cameras.Clear();
+
+                rt.Release();
+                rt = null;
+
+                Destroy(pivot.gameObject);
+
+                Destroy(debugTransform.gameObject);
+            }
         }
 
         private List<MultiSetup> multiSetups = new List<MultiSetup>();
@@ -182,11 +199,13 @@ namespace CaptureTools
             float aspectRatio = mainAspectRatio.x / mainAspectRatio.y;
             int renderWidth = fullRes ? Screen.width : Mathf.RoundToInt(mainHeight * aspectRatio);
 
+
             // Setup render texture.
             mainRenderTexture = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.Default);
             mainRenderTexture.antiAliasing = QualitySettings.antiAliasing;
 
             var cameraNames = isEditor ? new List<string> { "Main Camera" } : CaptureTools.cameraNames;
+
 
             // Create clones of the main, scaled-space and galaxy cameras.
             foreach (string cameraName in cameraNames)
@@ -668,7 +687,7 @@ namespace CaptureTools
 
         private void StartMultiCapture()
         {
-            cameras.Clear();
+            //cameras.Clear();
             //vesselCameraSetups.Clear();
             //comOffsets.Clear();
             //vesselTargets.Clear();
@@ -703,19 +722,16 @@ namespace CaptureTools
             Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
             multicamUp = FlightCamera.fetch == null ? Vector3.up : FlightCamera.fetch.getReferenceFrame() * Vector3.up;
 
-
             if (useFixedUpdate)
                 StartCoroutine(MultiFixedUpdate());
         }
 
         private void StopMultiCapture()
         {
-            cameras.RemoveAll(c => c == null);
-            cameras.ForEach(c => Destroy(c));
-            cameras.Clear();
+            //cameras.RemoveAll(c => c == null);
+            //cameras.ForEach(c => Destroy(c));
+            //cameras.Clear();
 
-            renderTextures.RemoveAll(t => t == null);
-            renderTextures.ForEach(t => t.Release());
             renderTextures.Clear();
 
             BlockHighlighters(false);
@@ -724,7 +740,7 @@ namespace CaptureTools
             QualitySettings.vSyncCount = originalVSyncCount;
             Application.targetFrameRate = originalTargetFrameRate;
 
-            multiSetups.ForEach(s => Destroy(s.debugTransform.gameObject));
+            multiSetups.ForEach(s => s.Dispose());
         }
 
         void SetupVessel(Vessel vessel)
@@ -744,7 +760,7 @@ namespace CaptureTools
             {
                 var camObject = new GameObject();
                 camObject.name = vessel.GetDisplayName() + cameraName;
-                cameras.Add(camObject);
+                //cameras.Add(camObject);
                 Camera cam = camObject.AddComponent<Camera>();
                 vesselCameras.Add(cam);
 
@@ -790,14 +806,20 @@ namespace CaptureTools
             //vesselTargets.Add(null);
             //targetVectorsLerped.Add(Vector3.zero);
 
+            var pivot = new GameObject("Multicam Pivot");
+
+            main.transform.SetParent(pivot.transform, false);
+            pivot.transform.position = vessel.CoM;
+            pivot.transform.rotation = Quaternion.identity;
+
             var setup = new MultiSetup
             {
                 vessel = vessel,
                 cameras = vesselCameras,
-                comOffset = vessel.ReferenceTransform.InverseTransformPoint(vessel.CoM),
-                targetVectorLerped = vessel.ReferenceTransform.forward,
+                //comOffset = vessel.ReferenceTransform.InverseTransformPoint(vessel.CoM),
                 vesselTarget = null,
                 rt = renderTexture,
+                pivot = pivot.transform,
             };
 
             if (BD.BDLoaded)
@@ -867,24 +889,8 @@ namespace CaptureTools
             }
             catch { }
 
-
-            // Destroy cameras.
-
-            foreach (var cam in setup.cameras)
-            {
-                if (cam == null) continue;
-                Destroy(cam.gameObject);
-            }
-
-            // Remove each element of the setup from the lists.
-            //vesselCameraSetups.RemoveAt(index);
-            //comOffsets.RemoveAt(index);
-            //vesselTargets.RemoveAt(index);
-            //targetVectorsLerped.RemoveAt(index);
-
             renderTextures.Remove(setup.rt);
-            setup.rt.Release();
-
+            setup.Dispose();
             multiSetups.Remove(setup);
 
             // The objects should be destroyed by the garbage collector now?
@@ -901,7 +907,7 @@ namespace CaptureTools
         {
             while (captureMulti)
             {
-                UpdateMultiCaptureFixed();
+                //UpdateMultiCaptureFixed();
                 UpdateMultiCapture();
 
                 yield return new WaitForFixedUpdate();
@@ -924,11 +930,8 @@ namespace CaptureTools
             List<Camera> vesselCameras;
             Camera main;
             Vessel target;
-            Vector3 targetVec;
             Vector3 vesselCoM;
-            Vector3 toVessel;
             Vector3 toTarget;
-            Vector3 targetRaw;
 
             List<Vessel> invalids = multiSetups.Select(s => s.vessel).ToList().FindAll(v => !VesselValid(v));
             invalids.ForEach(v => RemoveVessel(v));
@@ -959,56 +962,86 @@ namespace CaptureTools
                 vesselCameras.ForEach(c => c.cullingMask &= ~(1 << 8));
 
                 target = GetMulticamTarget(setup);
-
                 vesselCoM = vessel.vesselTransform.TransformPoint(vessel.localCoM);
+
+                setup.pivot.position = vesselCoM;
+                Quaternion pivotTarget;
+
+
+                // Pivot
 
                 if (target != null)
                 {
                     setup.vesselTarget = target;
 
-                    // Smooth target tracking.
+                    // Target tracking.
 
-                    if (setup.targetVectorLerped == Vector3.zero)
-                        setup.targetVectorLerped = main.transform.forward;
-
-                    targetVec = setup.targetVectorLerped.normalized;
-                    targetRaw = target.CoM - vesselCoM;
-
-                    main.transform.position = vesselCoM - (targetVec.normalized * cameraDistance);
-                    main.transform.position += multicamUp * cameraHeight;
-                    main.transform.position += Vector3.Cross(targetVec.normalized, multicamUp).normalized * cameraSlide * -1;
-
-                    // Point the camera inbetween the vessel and the target.
-
-                    toTarget = vesselCoM + targetVec * targetRaw.magnitude - main.transform.position;
-                    toVessel = vesselCoM - main.transform.position;
-
-                    main.transform.rotation = Quaternion.LookRotation(Vector3.Lerp(toVessel.normalized, toTarget.normalized, 0.5f), multicamUp);
+                    toTarget = target.CoM - vesselCoM;
+                    pivotTarget = Quaternion.LookRotation(toTarget.normalized, multicamUp);
                 }
                 else
                 {
                     // Alternatively, follow the vessel's velocity vector when there is no target.
 
+                    // Smooth towards pointing forwards when there's not much velocity.
                     float t = Mathf.Clamp01(((float)vessel.velocityD.magnitude - 5) / 5f);
                     Vector3 velocity = Vector3.Lerp(vessel.ReferenceTransform.up, vessel.velocityD.normalized, t);
 
-                    targetVec = (vessel.situation == Vessel.Situations.ORBITING) ? vessel.ReferenceTransform.up : velocity;
-                    Vector3 currentTargetVector = main.transform.position == Vector3.zero ? targetVec : setup.targetVectorLerped.normalized;
+                    // Look forwards instead of velocity when in orbit.
+                    Vector3 lookAhead = (vessel.situation == Vessel.Situations.ORBITING) ? vessel.ReferenceTransform.up : velocity;
 
-                    // TODO MAKE SURE THIS LAZY INIT IS WORKING. I DON'T THINK IT IS.
-
-                    setup.targetVectorLerped = Vector3.Slerp(currentTargetVector, targetVec, multicamSmoothing * 50 * Time.deltaTime * 0.3f);
-
-                    targetVec = setup.targetVectorLerped;
-
-                    main.transform.position = vesselCoM - (targetVec.normalized * cameraDistance);
-                    main.transform.position += multicamUp * Mathf.Max(cameraHeight * 0.5f, 3f);
-                    //main.transform.position += Vector3.Cross(targetVec.normalized, multicamUp).normalized * cameraSlide * -1;
-
-                    toVessel = vesselCoM - main.transform.position;
-
-                    main.transform.rotation = Quaternion.LookRotation(Vector3.Lerp(toVessel.normalized, targetVec.normalized, 0.5f), multicamUp);
+                    pivotTarget = Quaternion.LookRotation(lookAhead, multicamUp);
                 }
+
+                float deltaTime = useFixedUpdate ? Time.fixedDeltaTime : 1f / Time.captureFramerate;
+
+                // Initialise pivot at target.
+                if (setup.pivot.rotation == Quaternion.identity)
+                    setup.pivot.rotation = pivotTarget;
+
+                // Store current, and set to target to make the next step easier.
+                var currentPivot = setup.pivot.rotation;
+                setup.pivot.rotation = pivotTarget;
+
+
+                // Independently smoothed offset.
+
+                Vector3 localPosition = Vector3.zero;
+                Quaternion localRotation = Quaternion.identity;
+
+                if (target != null)
+                {
+                    localPosition = Vector3.back * cameraDistance;
+                    localPosition += Vector3.up * cameraHeight;
+                    localPosition += Vector3.right * cameraSlide;
+
+                    toTarget = setup.pivot.InverseTransformPoint(target.CoM) - localPosition;
+                    localRotation = Quaternion.LookRotation(Vector3.Lerp(-localPosition.normalized, toTarget.normalized, 0.5f), Vector3.up);
+                }
+                else
+                {
+                    localPosition = Vector3.back * cameraDistance;
+                    localPosition += Vector3.up * cameraHeight * 0.5f;
+
+                    localRotation = Quaternion.LookRotation(Vector3.Lerp(-localPosition.normalized, Vector3.forward, 0.5f), Vector3.up);
+                }
+
+                // Offset is finished, so now we can actually rotate the pivot.
+                setup.pivot.rotation = SmoothDampQ(currentPivot, pivotTarget, ref setup.pivotVel, multicamSmoothing, mainMaxSpeed, deltaTime);
+
+                // Initialise the camera at the offset.
+                if (main.transform.localPosition == Vector3.zero)
+                {
+                    main.transform.localPosition = localPosition;
+                    main.transform.localRotation = localRotation;
+                }
+
+                // Smooth the offset camera position in the reference frame of the pivot.
+                main.transform.localPosition = Vector3.SmoothDamp(main.transform.localPosition, localPosition, ref setup.posVelocity, multicamSmoothing, float.PositiveInfinity, deltaTime);
+                main.transform.localRotation = SmoothDampQ(main.transform.localRotation, localRotation, ref setup.rotVelocity, multicamSmoothing, mainMaxSpeed, deltaTime);
+
+
+                // Update field of view and rotations of other cameras.
 
                 vesselCameras[0].transform.rotation = main.transform.rotation;
                 vesselCameras[1].transform.rotation = main.transform.rotation;
@@ -1035,14 +1068,14 @@ namespace CaptureTools
                 if (!setup.captureInitialised)
                 {
                     setup.captureInitialised = true;
-                    InitialiseCameraCapture(main, false, vessel.persistentId.ToString());
+
+                    if (!previewOnly)
+                        InitialiseCameraCapture(main, false, vessel.persistentId.ToString());
                 }
             }
-
-            //Physics.SyncTransforms();
         }
 
-        private void UpdateMultiCaptureFixed()
+        /*private void UpdateMultiCaptureFixed()
         {
             float deltaTime = useFixedUpdate ? Time.fixedDeltaTime : 1f / Time.captureFramerate;
 
@@ -1094,7 +1127,7 @@ namespace CaptureTools
                         setup.targetVectorLerped = targetRaw.normalized;
                 }
             }
-        }
+        }*/
 
         private static Vessel GetMulticamTarget(MultiSetup setup)
         {
@@ -1109,7 +1142,7 @@ namespace CaptureTools
                     // We want to add a latency of 3 seconds to the BD target.
                     // This is so we can always see it for a few seconds after it's been destroyed.
 
-                    if (target != setup.BDTarget)
+                    /*if (target != setup.BDTarget)
                     {
                         setup.BDTarget = target;
                         setup.BDTargetTime = Time.time;
@@ -1118,6 +1151,10 @@ namespace CaptureTools
                     if (Time.time - setup.BDTargetTime < 3)
                         return setup.vesselTarget;
                     else if (target != null)
+                        return target;
+                    */
+
+                    if (target != null)
                         return target;
                 }
             }
