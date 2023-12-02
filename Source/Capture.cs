@@ -76,7 +76,7 @@ namespace CaptureTools
         public static float cameraSlide = 15f;
         public static float multicamSmoothing = 0.3f;
         public static float shipLimit = 4;
-        public static float bdTargetDelay = 3;
+        public static float bdTargetDelay = 2;
 
         public class MultiSetup
         {
@@ -96,8 +96,9 @@ namespace CaptureTools
 
             public PartModule BDAIModule;
             public bool hasBDAI = false;
-            public float BDTargetTime = 0;
-            public Vessel BDTarget;
+            public Vessel lastBDTarget;
+            public float lastBDTargetTime = 0;
+            public Vector3 lastBDTargetPos;
 
             public Transform debugTransform;
 
@@ -741,6 +742,7 @@ namespace CaptureTools
             Application.targetFrameRate = originalTargetFrameRate;
 
             multiSetups.ForEach(s => s.Dispose());
+            multiSetups.Clear();
         }
 
         void SetupVessel(Vessel vessel)
@@ -924,12 +926,9 @@ namespace CaptureTools
                 Application.targetFrameRate = Time.captureFramerate;
             }
 
-            //https://docs.unity3d.com/ScriptReference/Physics.SyncTransforms.html
-
             Vessel vessel;
             List<Camera> vesselCameras;
             Camera main;
-            Vessel target;
             Vector3 vesselCoM;
             Vector3 toTarget;
 
@@ -961,7 +960,7 @@ namespace CaptureTools
 
                 vesselCameras.ForEach(c => c.cullingMask &= ~(1 << 8));
 
-                target = GetMulticamTarget(setup);
+                GetMulticamTarget(setup, out bool hasTarget, out Vector3 targetPos);
                 vesselCoM = vessel.vesselTransform.TransformPoint(vessel.localCoM);
 
                 setup.pivot.position = vesselCoM;
@@ -970,13 +969,11 @@ namespace CaptureTools
 
                 // Pivot
 
-                if (target != null)
+                if (hasTarget)
                 {
-                    setup.vesselTarget = target;
-
                     // Target tracking.
 
-                    toTarget = target.CoM - vesselCoM;
+                    toTarget = targetPos - vesselCoM;
                     pivotTarget = Quaternion.LookRotation(toTarget.normalized, multicamUp);
                 }
                 else
@@ -1009,13 +1006,13 @@ namespace CaptureTools
                 Vector3 localPosition = Vector3.zero;
                 Quaternion localRotation = Quaternion.identity;
 
-                if (target != null)
+                if (hasTarget)
                 {
                     localPosition = Vector3.back * cameraDistance;
                     localPosition += Vector3.up * cameraHeight;
                     localPosition += Vector3.right * cameraSlide;
 
-                    toTarget = setup.pivot.InverseTransformPoint(target.CoM) - localPosition;
+                    toTarget = setup.pivot.InverseTransformPoint(targetPos) - localPosition;
                     localRotation = Quaternion.LookRotation(Vector3.Lerp(-localPosition.normalized, toTarget.normalized, 0.5f), Vector3.up);
                 }
                 else
@@ -1129,44 +1126,77 @@ namespace CaptureTools
             }
         }*/
 
-        private static Vessel GetMulticamTarget(MultiSetup setup)
+        private static bool VesselEquals(Vessel vessel1, Vessel vessel2)
         {
-            Vessel target;
+            if (vessel1 == null || vessel2 == null)
+                return false;
 
-            if (BD.BDLoaded)
+            return vessel1.GetReferenceTransformPart().persistentId == vessel2.GetReferenceTransformPart().persistentId;
+        }
+
+        private static void GetMulticamTarget(MultiSetup setup, out bool hasTarget, out Vector3 targetPos)
+        {
+            if (BD.BDLoaded && setup.hasBDAI && setup.BDAIModule != null)
             {
-                if (setup.hasBDAI && setup.BDAIModule != null)
+                Vessel bdTarget = (Vessel)BD.bdTargetField.GetValue(setup.BDAIModule);
+
+                // We want a latency of a few seconds before switching OFF a BD target to any kind of other target or no target.
+                // This is so we can always see it for a few seconds after it's been destroyed.
+
+                bool locked = Time.time - setup.lastBDTargetTime < bdTargetDelay;
+
+                bool shouldLock = !VesselEquals(bdTarget, setup.vesselTarget)
+                    && setup.lastBDTargetPos != Vector3.zero
+                    && setup.lastBDTargetTime == 0
+                    && bdTargetDelay > 0;
+
+                if (shouldLock || locked)
                 {
-                    target = (Vessel)BD.bdTargetField.GetValue(setup.BDAIModule);
+                    if (!locked)
+                        setup.lastBDTargetTime = Time.time;
 
-                    // We want to add a latency of 3 seconds to the BD target.
-                    // This is so we can always see it for a few seconds after it's been destroyed.
-
-                    /*if (target != setup.BDTarget)
+                    if (setup.vesselTarget != null)
                     {
-                        setup.BDTarget = target;
-                        setup.BDTargetTime = Time.time;
+                        targetPos = setup.vesselTarget.CoM;
+                        setup.lastBDTargetPos = targetPos;
+                    }
+                    else
+                    {
+                        targetPos = setup.lastBDTargetPos;
                     }
 
-                    if (Time.time - setup.BDTargetTime < 3)
-                        return setup.vesselTarget;
-                    else if (target != null)
-                        return target;
-                    */
-
-                    if (target != null)
-                        return target;
+                    setup.lastBDTarget = null;
+                    hasTarget = true;
+                    return;
                 }
+
+                setup.lastBDTargetTime = 0;
+
+                if (bdTarget != null)
+                {
+                    hasTarget = true;
+                    setup.vesselTarget = bdTarget;
+                    setup.lastBDTarget = bdTarget;
+                    targetPos = bdTarget.CoM;
+                    setup.lastBDTargetPos = targetPos;
+                    return;
+                }
+
+                setup.lastBDTarget = null;
+                setup.lastBDTargetPos = Vector3.zero;
             }
 
             if (setup.vessel.targetObject != null)
             {
-                return setup.vessel.targetObject.GetVessel();
+                hasTarget = true;
+                setup.vesselTarget = setup.vessel.targetObject.GetVessel();
+                targetPos = setup.vesselTarget.CoM;
+                return;
             }
-            else
-            {
-                return setup.vesselTarget;
-            }
+
+            hasTarget = false;
+            targetPos = Vector3.zero;
+            setup.vesselTarget = null;
         }
 
         #endregion

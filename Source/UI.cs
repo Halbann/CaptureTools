@@ -330,7 +330,21 @@ namespace CaptureTools
                     SettingSlider("Camera Height", ref cameraHeight, 0, 20, 1);
                     SettingSlider("Camera Slide", ref cameraSlide, 0, 20, 1);
                     SettingSlider("Camera Distance", ref cameraDistance, 10, 200, 1);
+                    SettingSlider("Target Delay", ref bdTargetDelay, 0, 5f, 1);
                     SettingSlider("Smoothing", ref multicamSmoothing, 0.01f, 5f, 2);
+
+                    /*var setup = multiSetups.FirstOrDefault();
+                    if (setup != null)
+                    {
+                        if (setup.vesselTarget != null)
+                            GUILayout.Label($"vesselTarget: {setup.vesselTarget.vesselName}");
+
+                        if (setup.lastBDTarget != null)
+                            GUILayout.Label($"lastBDTarget: {setup.lastBDTarget.vesselName}");
+
+                        GUILayout.Label($"lastBDTargetTime: {setup.lastBDTargetTime}");
+                        GUILayout.Label($"lastBDTargetPos: {setup.lastBDTargetPos:0}");
+                    }*/
 
                     GUILayout.EndVertical();
                 }
