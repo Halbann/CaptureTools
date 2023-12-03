@@ -11,13 +11,13 @@ https://halban.gumroad.com/l/CaptureTools
 
 - Added a setting called 'Target Delay' to multicam that allows you to add a small delay before the camera switches away from a BDA target. This is to make sure that BDA kills are recorded. I'm intending to extend this to KCS in future.
 
-- Revamped and refactored multicam camera movement to smoothly transition between states and targets while doing a better job of keeping both vessels in the frame. The movement should look more similar to the main camera.
+- Revamped multicam camera movement to smoothly transition between states and targets while doing a better job of keeping both vessels in the frame. The movement should look more similar to the main camera.
 
 - Fixed a bug that was causing the main and multi cameras to trail one physics update behind their target positions. This is what was causing fast moving vessels to sometimes leave the frame (especially with PRE installed), even with very low smoothing times.
 
 - Fixed a bug where multicam would record even when 'Preview Only' was enabled.
 
-- Fixed a bug where the part under the mouse would get stuck as highlighted when starting a recording.
+- Fixed a bug where the part under the mouse when starting a capture would be stuck as highlighted.
 
 
 ## 1.2.0
