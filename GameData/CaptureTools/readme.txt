@@ -17,6 +17,8 @@ https://halban.gumroad.com/l/CaptureTools
 
 - Fixed a bug where multicam would record even when 'Preview Only' was enabled.
 
+- Fixed a bug where the part under the mouse would get stuck as highlighted when starting a recording.
+
 
 ## 1.2.0
 

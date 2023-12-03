@@ -363,7 +363,8 @@ namespace CaptureTools
 
             Destroy(mainCameraPivot);
 
-            BlockHighlighters(false);
+            if (!captureMulti)
+                BlockHighlighters(false);
 
             if (captureSceneIsFlight)
             {
@@ -735,7 +736,9 @@ namespace CaptureTools
 
             renderTextures.Clear();
 
-            BlockHighlighters(false);
+            if (!captureMain)
+                BlockHighlighters(false);
+
             Time.captureFramerate = 0;
 
             QualitySettings.vSyncCount = originalVSyncCount;
@@ -1313,7 +1316,10 @@ namespace CaptureTools
             // set highlightBlocked to true via reflection.
             var highlightBlocked = typeof(Part).GetField("highlightBlocked", BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var part in parts)
+            {
                 highlightBlocked.SetValue(part, block);
+                part.SetHighlight(false, false);
+            }
         }
 
         public static Quaternion SmoothDampQ(Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
