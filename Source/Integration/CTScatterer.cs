@@ -274,7 +274,7 @@ namespace CaptureTools.Integration
         public SunflareCameraHook near;
         public SunflareCameraHook scaled;
 
-        internal void Awake()
+        internal void Start()
         {
             FieldInfo nearCameraHook = typeof(ScattererFlare).GetField("nearCameraHook", BindingFlags.Instance | BindingFlags.NonPublic);
             FieldInfo scaledCameraHook = typeof(ScattererFlare).GetField("scaledCameraHook", BindingFlags.Instance | BindingFlags.NonPublic);
