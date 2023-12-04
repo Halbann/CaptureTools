@@ -11,6 +11,8 @@ https://halban.gumroad.com/l/CaptureTools
 
 - Added a setting called 'Target Delay' to multicam that allows you to add a small delay before the camera switches away from a BDA target. This is to make sure that BDA kills are recorded. I'm intending to extend this to KCS in future.
 
+- Added Scatterer sunflares to main and multicam outputs. Currently only supports post-volumetric clouds versions of Scatterer.
+
 - Revamped multicam camera movement to smoothly transition between states and targets while doing a better job of keeping both vessels in the frame. The movement should look more similar to the main camera.
 
 - Fixed a bug that was causing the main and multi cameras to trail one physics update behind their target positions. This is what was causing fast moving vessels to sometimes leave the frame (especially with PRE installed), even with very low smoothing times.

@@ -578,8 +578,8 @@ namespace CaptureTools
             {
                 mainCaptureInitialised = true;
 
-                if (Scatterer.loaded)
-                    Scatterer.SetupCameras(main, mainCameras[1], false);
+                if (CTScatterer.loaded)
+                    CTScatterer.SetupCameras(main, mainCameras[1], false);
 
                 if (!previewOnly)
                     InitialiseCameraCapture(main, true, "");
@@ -838,8 +838,8 @@ namespace CaptureTools
                 //BD.AddTestCanvas(main);
             }
 
-            if (Scatterer.loaded)
-                Scatterer.SetupCameras(main, vesselCameras[1]);
+            if (CTScatterer.loaded)
+                CTScatterer.SetupCameras(main, vesselCameras[1]);
 
             multiSetups.Add(setup);
         }
