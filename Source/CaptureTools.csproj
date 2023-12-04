@@ -119,7 +119,7 @@
     <Compile Include="FFmpegOut\FrameRateController.cs" />
     <Compile Include="FFmpegOut\Internal\Blitter.cs" />
     <Compile Include="FFmpegOut\Internal\FFmpegPipe.cs" />
-    <Compile Include="Integration\Scatterer.cs" />
+    <Compile Include="Integration\CTScatterer.cs" />
     <Compile Include="Trace.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI.cs" />
