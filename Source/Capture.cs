@@ -1314,13 +1314,43 @@ namespace CaptureTools
             var parts = HighLogic.LoadedSceneIsFlight ? FlightGlobals.VesselsLoaded.SelectMany(v => v.parts) : EditorLogic.SortedShipList;
 
             // set highlightBlocked to true via reflection.
-            var highlightBlocked = typeof(Part).GetField("highlightBlocked", BindingFlags.NonPublic | BindingFlags.Instance);
+            //var highlightBlocked = typeof(Part).GetField("highlightBlocked", BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var part in parts)
             {
-                highlightBlocked.SetValue(part, block);
+                //highlightBlocked.SetValue(part, block);
                 part.SetHighlight(false, false);
             }
+
+            /*if (highlightersBlocked != block)
+            {
+                if (block)
+                {
+                    //GameEvents.onHideUI.Add(BlockHighlightersEvent);
+                    GameEvents.onShowUI.Add(BlockHighlightersEvent);
+                }
+                else
+                {
+                    //GameEvents.onHideUI.Remove(BlockHighlightersEvent);
+                    GameEvents.onShowUI.Remove(BlockHighlightersEvent);
+                }
+
+                highlightersBlocked = block;
+            }*/
+
+            GameSettings.INFLIGHT_HIGHLIGHT = !block;
         }
+
+        /*private void BlockHighlightersEvent()
+        {
+            StartCoroutine(BlockHighlightersEventCoroutine());
+        }
+
+        private IEnumerator BlockHighlightersEventCoroutine()
+        {
+            yield return null;
+
+            BlockHighlighters(true);
+        }*/
 
         public static Quaternion SmoothDampQ(Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
         {
