@@ -21,6 +21,8 @@ https://halban.gumroad.com/l/CaptureTools
 
 - Fixed a bug where the part under the mouse when starting a capture would be stuck as highlighted.
 
+- Fixed a bug where part highlighters would reappear during a recording after hiding and showing the UI.
+
 
 ## 1.2.0
 
