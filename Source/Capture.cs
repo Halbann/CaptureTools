@@ -507,9 +507,15 @@ namespace CaptureTools
                 if (isFlight && positionSmoothingEnabled)
                 {
                     Vector3 up = active.situation == Vessel.Situations.ORBITING ? main.transform.up : FlightCamera.fetch.upAxis;
-                    Vector3 toTargetVelocity = Vector3.Slerp(toTargetActual.normalized, active.rb_velocity.normalized, 0.5f);
-                    Quaternion lookAtTarget = Quaternion.LookRotation(toTargetVelocity, up);
 
+                    // Velocity-pointing
+                    Vector3 toTargetVelocity = Vector3.Slerp(toTargetActual.normalized, active.rb_velocity.normalized, 0.5f);
+
+                    // Blend depending on speed.
+                    toTargetVelocity = Vector3.Slerp(toTargetActual.normalized, toTargetVelocity, (active.rb_velocity.magnitude - 10) / 50);
+
+                    // Blend depending on distance.
+                    Quaternion lookAtTarget = Quaternion.LookRotation(toTargetVelocity, up);
                     targetRot = Quaternion.Slerp(targetRot, lookAtTarget, Mathf.InverseLerp(5, 50, toTargetActual.magnitude));
                 }
 

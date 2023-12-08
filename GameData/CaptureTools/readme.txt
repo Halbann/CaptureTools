@@ -28,6 +28,8 @@ https://github.com/Halbann/CaptureTools/wiki
 
 - Fixed a bug where part highlighters would reappear during a recording after hiding and showing the UI.
 
+- Fixed a bug where the main camera would look in the wrong direction when transitioning between vessels in space.
+
 
 ## 1.2.0
 
