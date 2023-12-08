@@ -4,10 +4,15 @@ Capture tools is paid software that took a lot work to create, please don't send
 
 https://halban.gumroad.com/l/CaptureTools
 
+The owner's manual covers everything you need to know about using Capture Tools and will hopefully answer any questions you may have. It takes about 15 minutes to read: 
+https://github.com/Halbann/CaptureTools/wiki
+
 
 # Changelog
 
 ## 1.3.0
+
+- Added an owner's manual, available at https://github.com/Halbann/CaptureTools/wiki.
 
 - Added a setting called 'Target Delay' to multicam that allows you to add a small delay before the camera switches away from a BDA target. This is to make sure that BDA kills are recorded. I'm intending to extend this to KCS in future.
 
