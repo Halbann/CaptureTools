@@ -33,7 +33,7 @@ namespace CaptureTools.Integration
             {
                 foreach (var assy in AssemblyLoader.loadedAssemblies)
                 {
-                    if (assy.dllName.Equals("Scatterer"))
+                    if (assy.dllName.ToLower().Equals("scatterer"))
                     {
                         loaded = true;
 
@@ -298,4 +298,9 @@ namespace CaptureTools.Integration
             scaled.enabled = false;
         }
     }
+
+    /*public class CaptureToolsHook : SunflareCameraHook
+    {
+
+    }*/
 }

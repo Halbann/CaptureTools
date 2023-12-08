@@ -36,8 +36,8 @@
       <HintPath>References\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Scatterer">
-      <HintPath>..\References\Scatterer.dll</HintPath>
+    <Reference Include="scatterer">
+      <HintPath>W:\Users\Lawrence\Documents\Project Files\Visual Studio\CaptureTools\References\scatterer.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
