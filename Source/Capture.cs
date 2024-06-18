@@ -856,6 +856,13 @@ namespace CaptureTools
 
         private void InitialiseCameraCapture(Camera cam, bool mainCamera, string fileName)
         {
+            StartCoroutine(InitialiseCameraCaptureCoroutine(cam, mainCamera, fileName));
+        }
+
+        private IEnumerator InitialiseCameraCaptureCoroutine(Camera cam, bool mainCamera, string fileName)
+        {
+            yield return new WaitForFixedUpdate();
+
             string path = Path.GetFullPath(Path.Combine(FilePath, mainCamera ? "Main" : "Multicam"));
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
