@@ -1,7 +1,6 @@
-# Capture Tools 1.3.0
+# Capture Tools 1.4.0
 
 Capture tools is paid software that took a lot work to create, please don't send it to anyone who hasn't paid for it. I'd be very grateful if you could refer anyone who might be interested to the gumroad page. Thank you.
-
 https://halban.gumroad.com/l/CaptureTools
 
 The owner's manual covers everything you need to know about using Capture Tools and will hopefully answer any questions you may have. It takes about 15 minutes to read: 
@@ -10,11 +9,17 @@ https://github.com/Halbann/CaptureTools/wiki
 
 # Changelog
 
+## 1.4.0
+
+- Fixed a conflict with Scatterer 839.
+- Fixed the black frame appearing at the beginning of video files.
+- Fixed a bug where the focus of the flight camera rotating suddenly would cause the main camera to lose its orientation.
+
 ## 1.3.0
 
 - Added an owner's manual, available at https://github.com/Halbann/CaptureTools/wiki.
 
-- Added a setting called 'Target Delay' to multicam that allows you to add a small delay before the camera switches away from a BDA target. This is to make sure that BDA kills are recorded. I'm intending to extend this to KCS in future.
+- Added a setting called 'Target Delay' to multicam that allows you to add a small delay before the camera switches away from a BDA target. This is to make sure that BDA kills are recorded. I'm intending to extend this to Kessler in future.
 
 - Added Scatterer sunflares to main and multicam outputs. Currently only supports post-volumetric clouds versions of Scatterer.
 

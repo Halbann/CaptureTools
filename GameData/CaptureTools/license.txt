@@ -20,7 +20,7 @@ https://github.com/keijiro
 
 ------------------------------------------
 
-FFmpeg is not part of Capture Tools and is redistributed separately under the GPL. A full copy of the GPL is provided.
+FFmpeg is not part of Capture Tools and is redistributed separately under the L-GPL. A full copy of the L-GPL is provided.
 
 ------------------------------------------
 
