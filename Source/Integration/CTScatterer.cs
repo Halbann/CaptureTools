@@ -20,7 +20,7 @@ namespace CaptureTools.Integration
         internal static Type sunlightModulatorType;
 
         public static string scattererNamespace = "Scatterer.";
-        public static float scattererVersion;
+        public static bool volumetricClouds = false;
 
         internal static void Check()
         {
@@ -39,10 +39,8 @@ namespace CaptureTools.Integration
 
                         string version = assy.assembly.FullName;
                         version = version.Split(',')[1].Split('=')[1].Split('.')[1].Trim();
-                        scattererVersion = float.Parse(version);
-
-                        if (scattererVersion <= 838f)
-                            scattererNamespace = "scatterer.";
+                        scattererNamespace = DecideNamespace(assy.assembly);
+                        volumetricClouds = scattererNamespace == "Scatterer.";
 
                         smaaType = assy.assembly.GetType(scattererNamespace + "SubpixelMorphologicalAntialiasing");
                         taaType = assy.assembly.GetType(scattererNamespace + "TemporalAntiAliasing");
@@ -57,6 +55,21 @@ namespace CaptureTools.Integration
             {
                 Debug.LogError($"[CaptureTools]: Failed to setup Scatterer integration: {e.Message}");
             }
+        }
+
+        private static string DecideNamespace(Assembly scatterer)
+        {
+            string[] possibleNamespaces = new string[] { "Scatterer.", "scatterer." };
+            string exampleType = "TemporalAntiAliasing";
+
+            foreach (var ns in possibleNamespaces)
+            {
+                var type = scatterer.GetType(ns + exampleType);
+                if (type != null)
+                    return ns;
+            }
+
+            throw new Exception("[CaptureTools]: Failed to establish Scatterer namespace. It could be that this version of Scatterer is too new or too old.");
         }
 
         public static void SetupCameras(Camera localSpace, Camera scaledSpace, bool doubleAA = false)
@@ -78,7 +91,7 @@ namespace CaptureTools.Integration
             var modulator = localSpace.gameObject.AddComponent<ModulateSunColour>();
             modulator.sunlightModulator = sunlightModulator;
 
-            if (scattererVersion > 838)
+            if (volumetricClouds) // todo: sunflare support for free scatterer.
                 SetupSunflares(localSpace, scaledSpace);
         }
 
