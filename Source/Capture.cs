@@ -249,13 +249,13 @@ namespace CaptureTools
             Camera flightCamera = isFlight ? FlightCamera.fetch.mainCamera : GetEditorCamera();
 
             // Controls centre and rotation.
-            mainCameraPivot = new GameObject();
+            mainCameraPivot = new GameObject("Capture Tools - Camera Pivot");
             mainCameraPivot.transform.position = flightCamera.transform.parent.parent.position;
             mainCameraPivot.transform.rotation = flightCamera.transform.parent.parent.rotation;
             smoothedPosition = mainCameraPivot.transform.position;
 
             // Controls distance.
-            mainCameraParent = new GameObject();
+            mainCameraParent = new GameObject("Capture Tools - Camera Parent");
             mainCameraParent.transform.parent = mainCameraPivot.transform;
             mainCameraParent.transform.localRotation = flightCamera.transform.parent.localRotation;
             mainCameraParent.transform.localPosition = flightCamera.transform.parent.localPosition;
@@ -500,9 +500,13 @@ namespace CaptureTools
 
                 // Orbit around the pivot. Right click and drag.
 
-                //Quaternion currentRot = mainCameraPivot.transform.rotation;
-                Quaternion currentRot = lastRotation;
-                Quaternion targetRot = flightCamera.transform.parent.parent.rotation;
+                // Because the flight camera's pivot is attached to a physics object, the actual rotation
+                // could be slightly off at this point in the frame, so work out what it ought to be.
+
+                FlightCamera fc = FlightCamera.fetch;
+                Quaternion targetRot = fc.getReferenceFrame()
+                    * Quaternion.AngleAxis(fc.camHdg * Mathf.Rad2Deg, Vector3.up) 
+                    * Quaternion.AngleAxis(fc.camPitch * Mathf.Rad2Deg, Vector3.right);
 
                 if (isFlight && positionSmoothingEnabled)
                 {
@@ -519,7 +523,7 @@ namespace CaptureTools
                     targetRot = Quaternion.Slerp(targetRot, lookAtTarget, Mathf.InverseLerp(5, 50, toTargetActual.magnitude));
                 }
 
-                mainCameraPivot.transform.rotation = SmoothDampQ(currentRot, targetRot, 
+                mainCameraPivot.transform.rotation = SmoothDampQ(lastRotation, targetRot, 
                     ref smoothPivotSpeed, Mathf.Max(mainSmoothTime * pivotSmoothTime, minSmoothTime), mainMaxSpeed, deltaTime);
 
                 lastRotation = mainCameraPivot.transform.rotation;
