@@ -321,8 +321,7 @@ namespace CaptureTools
             Time.maximumDeltaTime = GameSettings.PHYSICS_FRAME_DT_LIMIT;
             Time.fixedDeltaTime = 0.02f;
 
-            Application.targetFrameRate = originalTargetFrameRate;
-            QualitySettings.vSyncCount = originalVSyncCount;
+            RestoreFramerate();
 
 
             // Serialisation.

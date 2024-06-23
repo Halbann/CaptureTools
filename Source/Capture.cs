@@ -376,9 +376,7 @@ namespace CaptureTools
             }
 
             Time.captureFramerate = 0;
-            QualitySettings.vSyncCount = originalVSyncCount;
-            Application.targetFrameRate = originalTargetFrameRate;
-
+            RestoreFramerate();
 
             // Audio
 
@@ -405,15 +403,23 @@ namespace CaptureTools
             return EditorCamera.Instance.cam.transform.GetChild(0).GetComponent<Camera>();
         }
 
+        private void ControlFramerate()
+        {
+            int captureFramerate = Mathf.RoundToInt(CaptureTools.captureFramerate);
+
+            if (Time.captureFramerate != captureFramerate)
+                Time.captureFramerate = captureFramerate;
+
+            if (QualitySettings.vSyncCount != 0)
+                QualitySettings.vSyncCount = 0;
+
+            if (Application.targetFrameRate != captureFramerate)
+                Application.targetFrameRate = captureFramerate;
+        }
+
         private void UpdateMainCamera(float deltaTime = -1f)
         {
-            Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
-
-            if (Application.targetFrameRate != Time.captureFramerate)
-            {
-                QualitySettings.vSyncCount = 0;
-                Application.targetFrameRate = Time.captureFramerate;
-            }
+            ControlFramerate();
 
             if (deltaTime == -1)
                 deltaTime = useFixedUpdate ? Time.fixedDeltaTime : 1f / Time.captureFramerate;
@@ -751,8 +757,7 @@ namespace CaptureTools
 
             Time.captureFramerate = 0;
 
-            QualitySettings.vSyncCount = originalVSyncCount;
-            Application.targetFrameRate = originalTargetFrameRate;
+            RestoreFramerate();
 
             multiSetups.ForEach(s => s.Dispose());
             multiSetups.Clear();
@@ -936,15 +941,15 @@ namespace CaptureTools
             }
         }
 
+        private void RestoreFramerate()
+        {
+            QualitySettings.vSyncCount = GameSettings.SYNC_VBL;
+            Application.targetFrameRate = GameSettings.FRAMERATE_LIMIT;
+        }
+
         private void UpdateMultiCapture()
         {
-            Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
-
-            if (Application.targetFrameRate != Time.captureFramerate)
-            {
-                QualitySettings.vSyncCount = 0;
-                Application.targetFrameRate = Time.captureFramerate;
-            }
+            ControlFramerate();
 
             Vessel vessel;
             List<Camera> vesselCameras;
