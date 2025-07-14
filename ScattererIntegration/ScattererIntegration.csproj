@@ -72,9 +72,14 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-			copy /Y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).addon"
-			copy /Y "$(TargetDir)$(ProjectName).pdb" "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).pdb"
-		</PostBuildEvent>
+    <PostBuildEvent>if "$(ConfigurationName)"=="Debug" (
+    copy /Y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).dll"
+    copy /Y "$(TargetDir)$(ProjectName).pdb" "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).pdb"
+    if exist "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).addon" del "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).addon"
+) else (
+    copy /Y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).addon"
+    copy /Y "$(TargetDir)$(ProjectName).pdb" "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).pdb"
+    if exist "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).dll" del "$(SolutionDir)\GameData\CaptureTools\Addons\$(ProjectName).dll"
+)</PostBuildEvent>
   </PropertyGroup>
 </Project>

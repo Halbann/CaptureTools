@@ -555,7 +555,7 @@ namespace CaptureTools
 
         #region Serialisation
 
-        // todo: add persistent field attribute
+        // todo: use automatic settings system from Kessler.
 
         void SaveSettings()
         {

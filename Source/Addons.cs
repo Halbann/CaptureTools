@@ -74,52 +74,46 @@ namespace CaptureTools
                 if (loadedAddons.Contains(Path.GetFileNameWithoutExtension(file)))
                     continue;
 
-                try { LoadAddonFromPath(file); }
-                catch (System.Exception e) { Debug.LogError($"[CaptureTools]: Failed to load addon: {e.Message}"); }
+                LoadAddonFromPath(file);
             }
         }
 
         public static void LoadAddon(string name)
         {
             string addonPath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "CaptureTools", "Addons", name);
-
-            if (!File.Exists(addonPath))
-            {
-                Debug.LogError($"[CaptureTools]: Failed to load addon: {name} not found.");
-                return;
-            }
-
             LoadAddonFromPath(addonPath);
         }
 
         public static void LoadAddonFromPath(string addonPath)
         {
-            string filename = Path.GetFileName(addonPath);
-            string addonName = Path.GetFileNameWithoutExtension(addonPath);
-
-            Debug.Log($"[CaptureTools]: Loading addon {filename}.");
-
-            if (!File.Exists(addonPath))
+            try
             {
-                Debug.LogError($"[CaptureTools]: Failed to load addon: {filename} not found.");
-                return;
+                string filename = Path.GetFileName(addonPath);
+                string addonName = Path.GetFileNameWithoutExtension(addonPath);
+
+                if (AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.dllName.Equals(addonName, System.StringComparison.OrdinalIgnoreCase)) != null)
+                    throw new System.Exception($"{filename} already loaded.");
+
+                if (!File.Exists(addonPath))
+                    throw new System.Exception($"{filename} not found.");
+
+                Debug.Log($"[CaptureTools]: Loading addon {filename}.");
+
+                AssemblyLoader.LoadPlugin(new FileInfo(addonPath), addonPath, null);
+                AssemblyLoader.LoadedAssembly addon = AssemblyLoader.loadedAssemblies.FirstOrDefault(p => p.name == addonName);
+
+                if (addon == null)
+                    throw new System.Exception($"{filename} failed to load.");
+                else
+                    Debug.Log($"[CaptureTools]: Successfully loaded addon {filename}.");
+
+                loadedAddons.Add(addonName);
+                addon.Load();
             }
-
-            AssemblyLoader.LoadPlugin(new FileInfo(addonPath), addonPath, null);
-            AssemblyLoader.LoadedAssembly addon = AssemblyLoader.loadedAssemblies.FirstOrDefault(p => p.name == addonName);
-
-            if (addon == null)
+            catch (System.Exception e)
             {
-                Debug.LogError($"[CaptureTools]: Failed to load addon: {filename} failed to load.");
-                return;
+                Debug.LogError($"[CaptureTools]: Failed to load addon: {e.Message}");
             }
-            else
-            {
-                Debug.Log($"[CaptureTools]: Successfully loaded addon {filename}.");
-            }
-
-            loadedAddons.Add(addonName);
-            addon.Load();
         }
     }
 }
