@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -50,10 +50,6 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>References\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="scatterer">
-      <HintPath>L:\W Saved\Users\Lawrence\Documents\Project Files\Visual Studio\CaptureTools\References\scatterer.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -139,7 +135,7 @@
     <Compile Include="FFmpegOut\FrameRateController.cs" />
     <Compile Include="FFmpegOut\Internal\Blitter.cs" />
     <Compile Include="FFmpegOut\Internal\FFmpegPipe.cs" />
-    <Compile Include="Integration\CTScatterer.cs" />
+    <Compile Include="Addons.cs" />
     <Compile Include="Trace.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI.cs" />

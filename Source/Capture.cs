@@ -78,6 +78,9 @@ namespace CaptureTools
         public static float shipLimit = 4;
         public static float bdTargetDelay = 2;
 
+        public static event SetupCameras OnSetupCameras;
+        public delegate void SetupCameras(Camera localSpace, Camera scaledSpace, bool doubleAA = false);
+
         public class MultiSetup
         {
             public Vessel vessel;
@@ -202,11 +205,21 @@ namespace CaptureTools
 
 
             // Setup render texture.
-            mainRenderTexture = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.Default);
-            mainRenderTexture.antiAliasing = QualitySettings.antiAliasing;
+
+            bool allowHDR = isFlight ? FlightCamera.fetch.mainCamera.allowHDR : EditorCamera.Instance.cam.allowHDR;
+            RenderTextureFormat rtFormat = allowHDR ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32;
+
+            mainRenderTexture = new RenderTexture(renderWidth, renderHeight, 24, rtFormat);
+            mainRenderTexture.anisoLevel = 1;
+            mainRenderTexture.antiAliasing = Mathf.Max(QualitySettings.antiAliasing, 1);
+            mainRenderTexture.volumeDepth = 0;
+            mainRenderTexture.useMipMap = false;
+            mainRenderTexture.autoGenerateMips = false;
+            mainRenderTexture.filterMode = FilterMode.Bilinear; //bilinear is used by SMAA?
+            mainRenderTexture.wrapMode = TextureWrapMode.Clamp;
+            mainRenderTexture.Create();
 
             var cameraNames = isEditor ? new List<string> { "Main Camera" } : CaptureTools.cameraNames;
-
 
             // Create clones of the main, scaled-space and galaxy cameras.
             foreach (string cameraName in cameraNames)
@@ -222,7 +235,6 @@ namespace CaptureTools
                 cam.CopyFrom(template);
 
                 cam.fieldOfView = 20;
-                cam.allowMSAA = true;
                 cam.cullingMask &= ~(1 << 8);
 
                 if (isEditor)
@@ -594,8 +606,7 @@ namespace CaptureTools
             {
                 mainCaptureInitialised = true;
 
-                if (CTScatterer.loaded)
-                    CTScatterer.SetupCameras(main, mainCameras[1], false);
+                OnSetupCameras?.Invoke(main, mainCameras[1], false);
 
                 if (!previewOnly)
                     InitialiseCameraCapture(main, true, "");
@@ -853,8 +864,7 @@ namespace CaptureTools
                 //BD.AddTestCanvas(main);
             }
 
-            if (CTScatterer.loaded)
-                CTScatterer.SetupCameras(main, vesselCameras[1]);
+            OnSetupCameras?.Invoke(main, vesselCameras[1]);
 
             multiSetups.Add(setup);
         }
@@ -1293,6 +1303,9 @@ namespace CaptureTools
 
         private static void CopyCameraPostProcess(Camera template, Camera camera)
         {
+            // todo: should really be in a TUFX integration module.
+            // drop support for K3SP, it never worked anyway.
+
             Component templateLayer = template.gameObject.GetComponent("PostProcessLayer");
             if (templateLayer != null)
             {
@@ -1303,16 +1316,9 @@ namespace CaptureTools
                 var volumeLayer = layerType.GetField("volumeLayer", BindingFlags.Public | BindingFlags.Instance);
                 volumeLayer.SetValue(layer, volumeLayer.GetValue(templateLayer));
 
-                // set depth falgs to motion and vector
-                //var depthFlags = layerType.GetProperty("cameraDepthFlags", BindingFlags.Public | BindingFlags.Instance);
-                //depthFlags.SetValue(layer, depthFlags.GetValue(templateLayer));
-
-                // copy m_OldResources, m_Resources
-                //var oldResources = layerType.GetField("m_OldResources", BindingFlags.NonPublic | BindingFlags.Instance);
-                //oldResources.SetValue(layer, oldResources.GetValue(templateLayer));
-
+                // call Init(resources) function on the layer.
                 var resources = layerType.GetField("m_Resources", BindingFlags.NonPublic | BindingFlags.Instance);
-                resources.SetValue(layer, resources.GetValue(templateLayer));
+                layerType.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance).Invoke(layer, new object[] { resources.GetValue(templateLayer) });
             }
         }
 

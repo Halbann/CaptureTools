@@ -14,6 +14,8 @@ https://github.com/Halbann/CaptureTools/wiki
 - Fixed a conflict with Scatterer 839.
 - Fixed the black frame appearing at the beginning of video files.
 - Fixed a bug where the focus of the flight camera rotating suddenly would cause the main camera to lose its orientation.
+- Fixed a bug where Deferred's forward rendering fallback created artefacts in TUFX motion blur on Capture Tools cameras.
+- Fixed a bug where the atmosphere would flicker with Scatterer and Texture Replacer's real time reflections enabled.
 
 ## 1.3.0
 

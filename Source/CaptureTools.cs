@@ -150,7 +150,6 @@ namespace CaptureTools
 
             CameraToolsCheck();
             BD.BDArmouryCheck();
-            CTScatterer.Check();
 
             // Trace.
             TraceRecorder.recordedFrames = 0;

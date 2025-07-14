@@ -5,6 +5,10 @@ VisualStudioVersion = 17.7.34018.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaptureTools", "Source\CaptureTools.csproj", "{C19B4338-4B75-44B0-8879-295B8BD8D30C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScattererIntegration", "ScattererIntegration\ScattererIntegration.csproj", "{11E38220-071C-4017-A879-DA58E6033DBA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeferredIntegration", "DeferredIntegration\DeferredIntegration.csproj", "{01AAA39F-8A90-4C9B-AE38-CBBEA9C4EBC6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{C19B4338-4B75-44B0-8879-295B8BD8D30C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C19B4338-4B75-44B0-8879-295B8BD8D30C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C19B4338-4B75-44B0-8879-295B8BD8D30C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11E38220-071C-4017-A879-DA58E6033DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11E38220-071C-4017-A879-DA58E6033DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11E38220-071C-4017-A879-DA58E6033DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11E38220-071C-4017-A879-DA58E6033DBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01AAA39F-8A90-4C9B-AE38-CBBEA9C4EBC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01AAA39F-8A90-4C9B-AE38-CBBEA9C4EBC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01AAA39F-8A90-4C9B-AE38-CBBEA9C4EBC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01AAA39F-8A90-4C9B-AE38-CBBEA9C4EBC6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
