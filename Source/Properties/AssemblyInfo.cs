@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: KSPAssembly("CaptureTools", 1, 3)]
+[assembly: KSPAssembly("CaptureTools", 1, 4, 0)]
 //[assembly: KSPAssemblyDependency("scatterer", 0, 0)]
 
 // Setting ComVisible to false makes the types in this assembly not visible

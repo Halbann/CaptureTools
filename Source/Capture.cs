@@ -54,7 +54,7 @@ namespace CaptureTools
         private static readonly List<string> cameraNames = new List<string> { "GalaxyCamera", "Camera ScaledSpace", "Camera 00" };
         private Material renderTextureMaterial;
 
-        public static float CRF = 15;
+        public static float CRF = 18;
         public static float playbackFramerate = 60f;
         public static bool previewOnly = false;
         public static bool fullRes = false;

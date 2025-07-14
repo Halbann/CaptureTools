@@ -236,8 +236,10 @@ $RECYCLE.BIN/
 
 *.exe
 
+Archive
 Old Source
 Distribution
 Source/pdb2mdb
 Source/References
 GameData/CaptureTools/PluginData/
+References
