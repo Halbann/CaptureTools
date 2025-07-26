@@ -316,6 +316,8 @@ namespace CaptureTools
                 //GameEvents.onKrakensbaneEngage.Add(OnKrakensbaneEngage);
             }
 
+            OnSetupCameras?.Invoke(main, mainCameras[1], false); // todo: move this earlier
+
             if (useFixedUpdate)
                 StartCoroutine(MainFixedUpdate());
 
@@ -605,8 +607,6 @@ namespace CaptureTools
             if (!mainCaptureInitialised)
             {
                 mainCaptureInitialised = true;
-
-                OnSetupCameras?.Invoke(main, mainCameras[1], false);
 
                 if (!previewOnly)
                     InitialiseCameraCapture(main, true, "");

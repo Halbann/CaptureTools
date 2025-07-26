@@ -12,6 +12,7 @@ https://github.com/Halbann/CaptureTools/wiki
 ## 1.4.0
 
 - Fixed the black frame appearing at the beginning of video files.
+- Fixed EVE volumetric clouds not appearing in the first frame of video files.
 - Fixed a bug where the focus of the flight camera rotating suddenly would cause the main camera to lose its orientation.
 - Fixed a bug where the atmosphere would flicker with Scatterer and Texture Replacer's real time reflections enabled.
 - Fixed various bugs with Deferred integration (blurry terrain, ambient light, motion blur artefacts).

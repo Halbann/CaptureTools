@@ -8,7 +8,7 @@ using Scatterer;
 
 namespace CaptureTools
 {
-    [KSPAddon(KSPAddon.Startup.FlightAndEditor, true)]
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
     public class ScattererIntegration : MonoBehaviour
     {
         protected void Awake()
@@ -18,6 +18,8 @@ namespace CaptureTools
 
         public static void SetupCameras(Camera localSpace, Camera scaledSpace, bool doubleAA = false)
         {
+            Debug.Log($"[CaptureTools]: Setting up Scatterer integration on {localSpace.name} and {scaledSpace.name}.");
+
             if (Scatterer.Scatterer.Instance.mainSettings.useSubpixelMorphologicalAntialiasing)
             {
                 AddSMAA(localSpace);
@@ -37,6 +39,34 @@ namespace CaptureTools
             SetupSunflares(localSpace, scaledSpace);
 
             scaledSpace.gameObject.AddComponent<EnsureEffects>();
+
+            // Can't use this because DeferredRaymarchedVolumetricCloudsRenderer is marked internal.
+
+            //Atmosphere.DeferredRaymarchedVolumetricCloudsRenderer.EnableForThisFrame(localSpace, null);
+            //localSpace.GetComponent<Atmosphere.DeferredRaymarchedVolumetricCloudsRenderer>()?.Initialize();
+
+            // Do the same using reflection
+            var originalCloudRenderer = FlightCamera.fetch.mainCamera.GetComponent("Atmosphere.DeferredRaymarchedVolumetricCloudsRenderer");
+            if (originalCloudRenderer != null)
+            {
+                try
+                {
+                    var cloudRendererType = originalCloudRenderer.GetType();
+                    cloudRendererType.GetMethod("EnableForThisFrame", BindingFlags.Public | BindingFlags.Static)
+                        .Invoke(originalCloudRenderer, new object[] { localSpace, null });
+
+                    var initializeMethod = cloudRendererType.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Instance);
+                    var newCloudRenderer = localSpace.GetComponent("Atmosphere.DeferredRaymarchedVolumetricCloudsRenderer");
+
+                    initializeMethod?.Invoke(newCloudRenderer, null);
+
+                    Debug.Log($"[CaptureTools]: Successful early initialisation of DeferredRaymarchedVolumetricCloudsRenderer.");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[CaptureTools]: Failed early initialisation of DeferredRaymarchedVolumetricCloudsRenderer: {ex.Message}");
+                }
+            }
         }
 
         private static void AddTAA(Camera camera, Camera template)

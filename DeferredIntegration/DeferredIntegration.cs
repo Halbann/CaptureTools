@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CaptureTools
 {
-    [KSPAddon(KSPAddon.Startup.FlightAndEditor, true)]
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
     public class DeferredIntegration : MonoBehaviour
     {
         public static bool enableForwardRenderingCompatibility = true;
@@ -15,8 +15,7 @@ namespace CaptureTools
 
         public static void SetupCameras(Camera localSpace, Camera scaledSpace, bool doubleAA = false)
         {
-
-            Debug.Log($"[CaptureTools]: Setting up deferred integration on {localSpace.name} and {scaledSpace.name}.");
+            Debug.Log($"[CaptureTools]: Setting up Deferred integration on {localSpace.name} and {scaledSpace.name}.");
 
             if (localSpace != null)
             {
@@ -49,6 +48,24 @@ namespace CaptureTools
                 {
                     ForwardRenderingCompatibility forwardRenderingCompatibility = scaledSpace.gameObject.AddComponent<ForwardRenderingCompatibility>();
                     forwardRenderingCompatibility.Init(10);
+
+                    Transform parent = forwardRenderingCompatibility.transform;
+                    int count = parent.childCount;
+                    Transform child;
+                    MeshCollider collider;
+
+                    // Thoroughly disable the collider, because Scatterer is not fast enough. Otherwise can get exceptions on the next FixedUpdate when various stock raycasts hit it.
+                    for (int i = 0; i < count; i++)
+                        if ((child = parent.GetChild(i)).name == "Quad")
+                        {
+                            if ((collider = child.GetComponent<MeshCollider>()) != null)
+                            {
+                                collider.enabled = false;
+                                collider.gameObject.SetActive(false);
+                                Destroy(collider);
+                            }
+                            break;
+                        }
                 }
 
                 if (!scaledSpace.GetComponent<RefreshLegacyAmbient>())
