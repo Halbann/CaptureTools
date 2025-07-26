@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -141,30 +141,7 @@
     <Compile Include="UI.cs" />
   </ItemGroup>
   <PropertyGroup>
-    <PostBuildEvent>
-			set KSPDIR=$(ReferencePath)
-			set TGTDIR=$(TargetDir)
-			set NAME=$(TargetName)
-			set FILENAME=$(TargetFileName)
-
-			IF "%2525KSPDIR%2525"=="" (
-
-				ECHO Configuration error - KSPDIR not specified in project.
-
-				ECHO Either set KSPDIR environment variable or edit BetterLoadSaveGame.Common.props
-
-				PAUSE
-
-				GOTO DONE
-
-			)
-
-			cd "$(SolutionDir)"
-			call "deploy.bat"
-
-			if $(ConfigurationName) == Release (
-				call "buildRelease.bat"
-			)
-		</PostBuildEvent>
+    <PostBuildEvent>copy /Y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)\GameData\CaptureTools\Plugins\$(ProjectName).dll"
+    copy /Y "$(TargetDir)$(ProjectName).pdb" "$(SolutionDir)\GameData\CaptureTools\Plugins\$(ProjectName).pdb"</PostBuildEvent>
   </PropertyGroup>
 </Project>
