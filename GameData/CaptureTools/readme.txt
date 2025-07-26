@@ -17,6 +17,7 @@ https://github.com/Halbann/CaptureTools/wiki
 - Fixed a bug where the atmosphere would flicker with Scatterer and Texture Replacer's real time reflections enabled.
 - Fixed various bugs with Deferred integration (blurry terrain, ambient light, motion blur artefacts).
 - Fixed Scatterer sunflare and sunlight colour modulation.
+- Smoothing can be set to zero, in which case smoothing will be skipped (previously had a small minimum).
 
 ## 1.3.0
 

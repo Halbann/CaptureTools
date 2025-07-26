@@ -460,7 +460,7 @@ namespace CaptureTools
 
                 // Gradually push the camera back to the parent for when it transitions onto the pivot.
 
-                main.transform.localPosition = Vector3.SmoothDamp(main.transform.localPosition, Vector3.zero, 
+                main.transform.localPosition = SmoothDampV(main.transform.localPosition, Vector3.zero, 
                     ref pivotTransitionPosVelocity, mainSmoothTime, mainMaxSpeed, deltaTime);
                 main.transform.localRotation = SmoothDampQ(main.transform.localRotation, Quaternion.identity, 
                     ref pivotTransitionRotVelocity, mainSmoothTime, mainMaxSpeed, deltaTime);
@@ -506,7 +506,7 @@ namespace CaptureTools
                     //float mainPosSmoothTimeActual = mainPositionSmoothTime / Mathf.Max(activeSpeed, 1);
                     //float mainPosSmoothTimeActual = Mathf.Abs(currentDistance) * mainPositionSmoothTime / activeSpeed;
 
-                    smoothedPosition = Vector3.SmoothDamp(current, target, ref mainVelocity,
+                    smoothedPosition = SmoothDampV(current, target, ref mainVelocity,
                         Mathf.Max(mainPositionSmoothTime * mainSmoothTime, minSmoothTime), positionMaxSpeed, deltaTime);
 
                     mainCameraPivot.transform.position = smoothedPosition;
@@ -581,7 +581,7 @@ namespace CaptureTools
                 {
                     // Follow the absolute position and rotation of the flight camera.
 
-                    main.transform.position = Vector3.SmoothDamp(main.transform.position, flightCamera.transform.position,
+                    main.transform.position = SmoothDampV(main.transform.position, flightCamera.transform.position,
                         ref mainVelocity, Mathf.Max(mainSmoothTime * mainPositionSmoothTime, minSmoothTime), positionMaxSpeed, deltaTime);
 
                     main.transform.rotation = SmoothDampQ(main.transform.rotation, flightCamera.transform.rotation,
@@ -876,7 +876,7 @@ namespace CaptureTools
 
         private IEnumerator InitialiseCameraCaptureCoroutine(Camera cam, bool mainCamera, string fileName)
         {
-            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate(); //todo: incompatible with paused time.
 
             string path = Path.GetFullPath(Path.Combine(FilePath, mainCamera ? "Main" : "Multicam"));
             if (!Directory.Exists(path))
@@ -1069,7 +1069,7 @@ namespace CaptureTools
                 }
 
                 // Smooth the offset camera position in the reference frame of the pivot.
-                main.transform.localPosition = Vector3.SmoothDamp(main.transform.localPosition, localPosition, ref setup.posVelocity, multicamSmoothing, float.PositiveInfinity, deltaTime);
+                main.transform.localPosition = SmoothDampV(main.transform.localPosition, localPosition, ref setup.posVelocity, multicamSmoothing, float.PositiveInfinity, deltaTime);
                 main.transform.localRotation = SmoothDampQ(main.transform.localRotation, localRotation, ref setup.rotVelocity, multicamSmoothing, mainMaxSpeed, deltaTime);
 
 
@@ -1406,6 +1406,17 @@ namespace CaptureTools
             deriv.w -= derivError.w;
 
             return new Quaternion(Result.x, Result.y, Result.z, Result.w);
+        }
+
+        public static Vector3 SmoothDampV(Vector3 current, Vector3 target, ref Vector3 currentVelocity, float smoothTime, [UnityEngine.Internal.DefaultValue("Mathf.Infinity")] float maxSpeed, [UnityEngine.Internal.DefaultValue("Time.deltaTime")] float deltaTime)
+        {
+            if (smoothTime <= float.Epsilon)
+            {
+                currentVelocity = Vector3.zero;
+                return target;
+            }
+
+            return Vector3.SmoothDamp(current, target, ref currentVelocity, smoothTime, maxSpeed, deltaTime);
         }
 
         #endregion
