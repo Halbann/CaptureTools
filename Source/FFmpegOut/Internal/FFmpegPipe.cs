@@ -13,14 +13,18 @@ namespace FFmpegOut
     {
         #region Public methods
 
-        public static bool IsAvailable {
-            get { return System.IO.File.Exists(ExecutablePath); }
+        public static bool IsAvailable
+        {
+            get { return File.Exists(ExecutablePath); }
         }
 
         public FFmpegPipe(string arguments)
         {
+            UnityEngine.Debug.Log("[CaptureTools]: Creating new FFmpeg pipe. Arguments: " + arguments);
+
             // Start FFmpeg subprocess.
-            _subprocess = Process.Start(new ProcessStartInfo {
+            _subprocess = Process.Start(new ProcessStartInfo
+            {
                 FileName = ExecutablePath,
                 Arguments = arguments,
                 UseShellExecute = false,
@@ -29,6 +33,16 @@ namespace FFmpegOut
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             });
+
+            // todo: this and _subprocess.ErrorDataReceived doesn't work . figure out proper ffmpeg error handling.
+            if (_subprocess == null)
+                throw new System.Exception("Failed to start FFmpeg subprocess.");
+
+            _subprocess.ErrorDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                    UnityEngine.Debug.LogError("[Capture Tools]: FFmpeg error: " + e.Data);
+            }
 
             // Start copy/pipe subthreads.
             _copyThread = new Thread(CopyThread);
@@ -72,8 +86,8 @@ namespace FFmpegOut
             _subprocess.StandardInput.Close();
             _subprocess.WaitForExit();
 
-            var outputReader = _subprocess.StandardError;
-            var error = outputReader.ReadToEnd();
+            StreamReader outputReader = _subprocess.StandardError;
+            string error = outputReader.ReadToEnd();
 
             _subprocess.Close();
             _subprocess.Dispose();
@@ -130,10 +144,13 @@ namespace FFmpegOut
 
         public static string ExecutablePath
         {
-            get {
-                var basePath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "CaptureTools", "FFmpeg");
-                var platform = UnityEngine.Application.platform;
-                
+            get
+            {
+                // todo: support arbitrary locations and system/user PATH.
+
+                string basePath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "CaptureTools", "FFmpeg");
+                UnityEngine.RuntimePlatform platform = UnityEngine.Application.platform;
+
                 if (platform == UnityEngine.RuntimePlatform.OSXPlayer ||
                     platform == UnityEngine.RuntimePlatform.OSXEditor)
                     return basePath + "/macOS/ffmpeg";
@@ -195,7 +212,7 @@ namespace FFmpegOut
         // them into the FFmpeg pipe.
         void PipeThread()
         {
-            var pipe = _subprocess.StandardInput.BaseStream;
+            Stream pipe = _subprocess.StandardInput.BaseStream;
 
             while (!_terminate)
             {
