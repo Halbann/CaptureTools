@@ -55,7 +55,7 @@ namespace CaptureTools
         private float defaultFixedDeltaTime;
         public bool applyFixedDeltaTime;
 
-        public static float captureFramerate = 60;
+        public static Constrained captureFramerate = new Constrained(60, minFramerate, maxFramerate, 0);
         private int defaultCaptureFramerate;
         public bool applyCaptureFramerate;
 
@@ -576,6 +576,7 @@ namespace CaptureTools
 
             // Capture
             settings.SetValue("captureFramerate", captureFramerate, true);
+            settings.SetValue("differentPlaybackFramerate", differentPlaybackFramerate, true);
             settings.SetValue("playbackFramerate", playbackFramerate, true);
             settings.SetValue("useFixedUpdate", useFixedUpdate, true);
             settings.SetValue("previewOnly", previewOnly, true);
@@ -585,7 +586,6 @@ namespace CaptureTools
             // Main
             settings.SetValue("mainCaptureAudio", mainCaptureAudio, true);
             settings.SetValue("audioOnly", audioOnly, true);
-            //settings.SetValue("positionSmoothing", positionSmoothing, true);
             settings.SetValue("mainSmoothTime", mainSmoothTime, true);
             settings.SetValue("mainAspectRatio", mainAspectRatio, true);
             settings.SetValue("mainHeight", mainHeight, true);
@@ -611,7 +611,6 @@ namespace CaptureTools
             settings.SetValue("bdTargetDelay", bdTargetDelay, true);
 
             // Trace
-            //settings.SetValue("traceFramerateSlider", traceFramerateSlider, true);
             settings.SetValue("traceFramerate", traceFramerate, true);
             settings.SetValue("traceFrameOfReference", traceFrameOfReference.ToString(), true);
 
@@ -643,10 +642,9 @@ namespace CaptureTools
 
             // All
             settings.TryGetValue("filePath", ref filePath);
-
-            // Capture
-            settings.TryGetValue("captureFramerate", ref captureFramerate);
-            settings.TryGetValue("playbackFramerate", ref playbackFramerate);
+            settings.TryGetValue("captureFramerate", captureFramerate);
+            settings.TryGetValue("playbackFramerate", playbackFramerate);
+            settings.TryGetValue("differentPlaybackFramerate", ref differentPlaybackFramerate);
             settings.TryGetValue("useFixedUpdate", ref useFixedUpdate);
             settings.TryGetValue("previewOnly", ref previewOnly);
             settings.TryGetValue("fullRes", ref fullRes);

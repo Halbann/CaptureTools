@@ -19,6 +19,7 @@ https://github.com/Halbann/CaptureTools/wiki
 - Fixed Scatterer sunflare and sunlight colour modulation.
 - The UI now stays open between loading screens.
 - Smoothing can be set to zero, in which case smoothing will be skipped (previously had a small minimum).
+- The playback framerate now defaults to whatever the capture framerate is unless you enable the playback framerate slider.
 
 ## 1.3.0
 

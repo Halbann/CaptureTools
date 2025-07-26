@@ -54,8 +54,12 @@ namespace CaptureTools
         private static readonly List<string> cameraNames = new List<string> { "GalaxyCamera", "Camera ScaledSpace", "Camera 00" };
         private Material renderTextureMaterial;
 
+        public const int minFramerate = 1;
+        public const int maxFramerate = 240;
+
         public static float CRF = 18;
-        public static float playbackFramerate = 60f;
+        public static Constrained playbackFramerate = new Constrained(60, minFramerate, maxFramerate, 0);
+        public static bool differentPlaybackFramerate = false;
         public static bool previewOnly = false;
         public static bool fullRes = false;
         public static bool useFixedUpdate = true;
@@ -148,7 +152,6 @@ namespace CaptureTools
         // Position.
         private Vessel lastVessel;
         private Vector3 smoothedPosition;
-        public static float positionSmoothing = 1f;
         public static bool positionSmoothingEnabled = true;
 
         public static float mainMaxSpeed = 100f;
@@ -305,7 +308,7 @@ namespace CaptureTools
             lastVessel = FlightGlobals.ActiveVessel;
             mainCaptureStartFrame = Time.frameCount;
             mainCaptureInitialised = false;
-            Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
+            Time.captureFramerate = captureFramerate;
 
             if (isFlight)
             {
@@ -419,7 +422,7 @@ namespace CaptureTools
 
         private void ControlFramerate()
         {
-            int captureFramerate = Mathf.RoundToInt(CaptureTools.captureFramerate);
+            int captureFramerate = CaptureTools.captureFramerate;
 
             if (Time.captureFramerate != captureFramerate)
                 Time.captureFramerate = captureFramerate;
@@ -748,7 +751,7 @@ namespace CaptureTools
             BlockHighlighters(true);
             InitPreviewMaterial();
             multicamCaptureStartFrame = Time.frameCount;
-            Time.captureFramerate = Mathf.RoundToInt(captureFramerate);
+            Time.captureFramerate = captureFramerate;
             multicamUp = FlightCamera.fetch == null ? Vector3.up : FlightCamera.fetch.getReferenceFrame() * Vector3.up;
 
             if (useFixedUpdate)
@@ -886,7 +889,7 @@ namespace CaptureTools
             {
                 // Start recording.
                 CameraCapture camCap = cam.gameObject.AddComponent<CameraCapture>();
-                camCap.frameRate = Mathf.RoundToInt(playbackFramerate);
+                camCap.frameRate = playbackFramerate;
                 camCap.width = cam.targetTexture.width;
                 camCap.height = cam.targetTexture.height;
                 camCap.outputName = fileName;

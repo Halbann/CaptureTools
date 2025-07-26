@@ -120,6 +120,8 @@
     <Compile Include="AudioRecorder\CaptureAudioUnity.cs" />
     <Compile Include="AudioRecorder\AudioInput.cs" />
     <Compile Include="AudioRecorder\AudioRecorder.cs" />
+    <Compile Include="ConfigNodeExtensions.cs" />
+    <Compile Include="Constrained.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Integration\BD.cs" />
     <Compile Include="BuildAnimation.cs" />

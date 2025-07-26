@@ -20,6 +20,7 @@ namespace CaptureTools
         private static KeyCode toggleUIKeycode = KeyCode.F8;
         private static UISection currentSection = UISection.Capture;
         private static float timingSliderSpace = 12f;
+        private static float sliderWidth = 220f;
 
         //private static bool showTimingSection = false;
         //private static bool showCaptureSection = false;
@@ -42,6 +43,14 @@ namespace CaptureTools
         public bool showClapper = false;
         private static GUIStyle clapperStyle;
 
+        // Sliders
+        SettingSliderType captureFramerateSlider = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
+        SettingSliderType playbackFramerateSlider = new SettingSliderType { name = "Playback Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
+
+        SettingSliderType captureFramerateSliderToggle = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
+        SettingSliderType timescaleSlider = new SettingSliderType { name = "Time Scale", rounding = 3, useToggle = true };
+        SettingSliderType maxDeltaTimeSlider = new SettingSliderType { name = "Max Delta Time", min = 0.02f, rounding = 2, useToggle = true };
+        SettingSliderType fixedDeltaTimeSlider = new SettingSliderType { name = "Fixed Delta Time", min = 0.02f, rounding = 2, useToggle = true };
 
         #region GUI
 
@@ -188,19 +197,12 @@ namespace CaptureTools
                 GUI.enabled = false;
 
             SettingSlider("Quality (CRF)", ref CRF, 10, 40, 0);
-            SettingSlider("Capture Frame Rate", ref captureFramerate, 24, 120, 0);
-            SettingSlider("Playback Frame Rate", ref playbackFramerate, 24, 120, 0);
+            UpdateFramerateSlider(captureFramerateSlider, captureFramerate);
+            UpdateFramerateSlider(playbackFramerateSlider, playbackFramerate, ref differentPlaybackFramerate);
 
-            // Round playbackFramerate to 10s
-            if (playbackFramerate > 30)
-                playbackFramerate = Mathf.RoundToInt(playbackFramerate / 10) * 10;
-
-            // Round playbackFramerate to 10s
-            if (captureFramerate > 30)
-                captureFramerate = Mathf.RoundToInt(captureFramerate / 10) * 10;
-
-            playbackFramerate = Mathf.Clamp(playbackFramerate, 24, 120);
-
+            // todo: move out of UI?
+            if (!differentPlaybackFramerate && playbackFramerate.Value != captureFramerate)
+                playbackFramerate.Value = captureFramerate;
 
             // Frame of reference.
             GUILayout.BeginHorizontal();
@@ -414,74 +416,39 @@ namespace CaptureTools
             GUILayout.BeginVertical(boxStyle);
 
             // Max delta time.
-            if (applyMaxDeltaTime = GUILayout.Toggle(applyMaxDeltaTime, "Max Delta Time"))
-            {
-                //GUILayout.Label(Time.maximumDeltaTime.ToString());
-                //maxDeltaTime = GUILayout.HorizontalSlider(maxDeltaTime, Time.fixedDeltaTime, 1f);
-                GUILayout.Space(timingSliderSpace);
-                maxDeltaTime = Mathf.Clamp(maxDeltaTime, Time.fixedDeltaTime, 1f);
-                SettingSlider("", ref maxDeltaTime, Time.fixedDeltaTime, 1, 2);
+            maxDeltaTimeSlider.Update(ref maxDeltaTime, ref applyMaxDeltaTime);
+            maxDeltaTime = Mathf.Clamp(maxDeltaTime, Time.fixedDeltaTime, 1f);
 
-                if (Time.maximumDeltaTime != maxDeltaTime)
-                    Time.maximumDeltaTime = maxDeltaTime;
-            }
-            else
-            {
-                if (Time.maximumDeltaTime != defaultMaxDeltaTime)
-                    Time.maximumDeltaTime = defaultMaxDeltaTime;
-            }
+            // todo: this should not apply the default all the time that applyMaxDeltaTime is false.
+            if (applyMaxDeltaTime && Time.maximumDeltaTime != maxDeltaTime)
+                Time.maximumDeltaTime = maxDeltaTime;
+            else if (!applyMaxDeltaTime && Time.maximumDeltaTime != defaultMaxDeltaTime)
+                Time.maximumDeltaTime = defaultMaxDeltaTime;
 
-            // Fixed delta time.
-            if (applyFixedDeltaTime = GUILayout.Toggle(applyFixedDeltaTime, "Fixed Delta Time"))
-            {
-                //GUILayout.Label(Time.fixedDeltaTime.ToString());
-                //fixedDeltaTime = GUILayout.HorizontalSlider(fixedDeltaTime, 0.02f, 0.2f);
-                GUILayout.Space(timingSliderSpace);
-                SettingSlider("", ref fixedDeltaTime, 0.02f, 1, 2);
+            // Fixed Delta Time.
+            fixedDeltaTimeSlider.Update(ref fixedDeltaTime, ref applyFixedDeltaTime);
 
-                if (Time.fixedDeltaTime != fixedDeltaTime)
-                    Time.fixedDeltaTime = fixedDeltaTime;
-            }
-            else
-            {
-                if (Time.fixedDeltaTime != defaultFixedDeltaTime)
-                    Time.fixedDeltaTime = defaultFixedDeltaTime;
-            }
+            // todo: likewise
+            if (applyFixedDeltaTime && Time.fixedDeltaTime != fixedDeltaTime)
+                Time.fixedDeltaTime = fixedDeltaTime;
+            else if (!applyFixedDeltaTime && Time.fixedDeltaTime != defaultFixedDeltaTime)
+                Time.fixedDeltaTime = defaultFixedDeltaTime;
 
             // Capture framerate.
             bool prevApplyCaptureFramerate = applyCaptureFramerate;
             float prevCaptureFramerate = captureFramerate;
-            if (applyCaptureFramerate = GUILayout.Toggle(applyCaptureFramerate, "Capture Frame Rate"))
-            {
-                //GUILayout.Label(Time.captureFramerate.ToString());
-                //captureFramerate = (int)Math.Round(GUILayout.HorizontalSlider(captureFramerate, 1, 120), 0);
-                GUILayout.Space(timingSliderSpace);
-                SettingSlider("", ref captureFramerate, 24, 120, 0);
 
-                // Round to 10s
-                if (captureFramerate > 30)
-                    captureFramerate = Mathf.RoundToInt(captureFramerate / 10) * 10;
-            }
+            UpdateFramerateSlider(captureFramerateSliderToggle, captureFramerate, ref applyCaptureFramerate);
 
             if (prevApplyCaptureFramerate != applyCaptureFramerate || captureFramerate != prevCaptureFramerate)
-                Time.captureFramerate = applyCaptureFramerate ? (int)captureFramerate : defaultCaptureFramerate;
+                Time.captureFramerate = applyCaptureFramerate ? captureFramerate : defaultCaptureFramerate;
 
-            // Time Scale.
-            if (applyTimescale = GUILayout.Toggle(applyTimescale, "Time Scale"))
-            {
-                //GUILayout.Label(timeScale.ToString("F3"));
-                //timeScale = GUILayout.HorizontalSlider(timeScale, 0f, 1f);
-                GUILayout.Space(timingSliderSpace);
-                SettingSlider("", ref timeScale, 0, 1, 3);
-
-                if (Time.timeScale != timeScale)
-                    Time.timeScale = timeScale;
-            }
-            else
-            {
-                if (Time.timeScale == timeScale)
-                    Time.timeScale = 1f;
-            }
+            // Time Scale. todo: this is also silly.
+            timescaleSlider.Update(ref timeScale, ref applyTimescale);
+            if (applyTimescale && Time.timeScale != timeScale)
+                Time.timeScale = timeScale;
+            else if (!applyTimescale && Time.timeScale == timeScale)
+                Time.timeScale = 1f;
 
             GUILayout.Label($"Physics Delta: {Math.Round(Time.fixedDeltaTime, 4)}");
             GUILayout.Label($"Frame Delta: {Math.Round(Time.deltaTime, 4)}");
@@ -633,24 +600,109 @@ namespace CaptureTools
             //GUILayout.EndHorizontal();
         }
 
-        void SettingSlider(string name, ref float setting, float min, float max, int rounding)
+        // todo: replace all uses of SettingSlider and remove SettingSlider.
+
+        public class SettingSliderType
         {
-            bool update = false;
-            SettingSlider(name, ref setting, min, max, rounding, ref update);
+            public string name = string.Empty;
+            public float min = 0f;
+            public float max = 1f;
+            public int rounding = 2;
+            public bool softClamp = false;
+            public bool useToggle = false;
+
+            public static float sliderWidth = 220f;
+
+            private string text;
+            private float sliderMin;
+            private float sliderMax;
+
+            public float Update(float setting)
+            {
+                bool update = false;
+                return Update(setting, false, ref update).setting;
+            }
+
+            public (float setting, bool toggle) Update(float setting, bool toggle)
+            {
+                bool update = false;
+                return Update(setting, toggle, ref update);
+            }
+
+            public void Update(ref float setting, ref bool toggle)
+            {
+                (setting, toggle) = Update(setting, toggle);
+            }
+
+            public (float setting, bool toggle) Update(float setting, bool toggle, ref bool updated)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(3);
+
+                // Toggle.
+                if (useToggle)
+                {
+                    toggle = GUILayout.Toggle(toggle, "", GUILayout.Width(12));
+                    bool guiEnabled = GUI.enabled;
+
+                    if (!toggle)
+                        GUI.enabled = false;
+                }
+
+                // Label.
+                if (name != "")
+                    GUILayout.Label(name);
+
+                // Slider
+                sliderMin = !softClamp ? min : Mathf.Min(setting, min);
+                sliderMax = !softClamp ? max : Mathf.Max(setting, max);
+                setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, sliderMin, sliderMax, GUILayout.Width(sliderWidth)), rounding);
+
+                // Box
+                text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), textBoxStyle, GUILayout.Width(38));
+                if (float.TryParse(text, out float result))
+                    setting = result;
+                else if (text == "")
+                    setting = 0;
+
+                // Toggle GUI enabled reset.
+                if (useToggle && !toggle)
+                    GUI.enabled = guiEnabled;
+
+                GUILayout.Space(3);
+                GUILayout.EndHorizontal();
+
+                return (setting, toggle);
+            }
         }
 
-        void SettingSlider(string name, ref float setting, float min, float max, int rounding, ref bool update)
+        public static float RoundFramerate(float framerate)
+        {
+            if (framerate > 30)
+                return Mathf.Round(framerate / 10) * 10;
+            else
+                return Mathf.Round(framerate);
+        }
+
+        void SettingSlider(string name, ref float setting, float min, float max, int rounding, bool softMin = false)
+        {
+            bool update = false;
+            SettingSlider(name, ref setting, min, max, rounding, ref update, softMin);
+        }
+
+        void SettingSlider(string name, ref float setting, float min, float max, int rounding, ref bool update, bool softMin = false)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(3);
 
             if (name != "")
-                GUILayout.Label(name, GUILayout.Width(70));
+                GUILayout.Label(name);
 
             float old = setting;
 
             // Slider
-            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, min, max), rounding);
+            float sliderMin = !softMin ? min : Mathf.Min(setting, min);
+            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, sliderMin, max, GUILayout.Width(sliderWidth)), rounding);
 
             // Box
             string text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), textBoxStyle, GUILayout.Width(38));
@@ -665,7 +717,7 @@ namespace CaptureTools
             GUILayout.EndHorizontal();
         }
 
-        void SettingSliderToggle(string name, ref float setting, float min, float max, int rounding, ref bool toggle)
+        void SettingSliderToggle(string name, ref float setting, float min, float max, int rounding, ref bool toggle, bool softMin = false)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(3);
@@ -677,10 +729,11 @@ namespace CaptureTools
                 GUI.enabled = false;
 
             if (name != "")
-                GUILayout.Label(name, GUILayout.Width(54));
+                GUILayout.Label(name);
 
             // Slider
-            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, min, max), rounding);
+            float sliderMin = !softMin ? min : Mathf.Min(setting, min);
+            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, sliderMin, max, GUILayout.Width(sliderWidth)), rounding);
 
             // Box
             string text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), textBoxStyle, GUILayout.Width(38));
@@ -701,9 +754,9 @@ namespace CaptureTools
             return value;
         }
 
-        private bool RecordButton(bool recording, int startFrame, float framerate, bool preview)
+        private bool RecordButton(bool recording, int startFrame, int framerate, bool preview)
         {
-            float recordingTime = (Time.frameCount - startFrame) / framerate;
+            float recordingTime = (Time.frameCount - startFrame) / (float)framerate;
             return RecordButtonInternal(recording, recordingTime, preview);
         }
 
@@ -743,6 +796,16 @@ namespace CaptureTools
 
             GUI.Label(new Rect(0 + offset, 0 + offset, Screen.width, Screen.height), "<color=black>SYNC</color>", clapperStyle);
             GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "SYNC", clapperStyle);
+        }
+
+        private void UpdateFramerateSlider(SettingSliderType slider, Constrained framerate) =>
+            framerate.Value = RoundFramerate(slider.Update(framerate));
+
+        private void UpdateFramerateSlider(SettingSliderType slider, Constrained framerate, ref bool toggle)
+        {
+            float framerateValue = framerate.Value;
+            slider.Update(ref framerateValue, ref toggle);
+            framerate.Value = RoundFramerate(framerateValue);
         }
 
         public void AddToolbarButton()
