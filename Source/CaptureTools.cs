@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Linq;
 using System.IO;
@@ -159,6 +159,8 @@ namespace CaptureTools
 
             GameEvents.onHideUI.Add(OnHideUI);
             GameEvents.onShowUI.Add(OnShowUI);
+            GameEvents.onGameSceneLoadRequested.Add(OnSceneRequested);
+            GameEvents.onLevelWasLoaded.Add(OnSceneLoaded);
 
             AddToolbarButton();
 
@@ -338,6 +340,11 @@ namespace CaptureTools
 
             if (CaptureMulti)
                 CaptureMulti = false;
+
+            GameEvents.onHideUI.Remove(OnHideUI);
+            GameEvents.onShowUI.Remove(OnShowUI);
+            GameEvents.onGameSceneLoadRequested.Remove(OnSceneRequested);
+            GameEvents.onLevelWasLoaded.Remove(OnSceneLoaded);
         }
 
         #endregion

@@ -1,8 +1,7 @@
-﻿using System;
+using KSP.UI.Screens;
+using System;
 using System.IO;
 using System.Linq;
-
-using KSP.UI.Screens;
 using UnityEngine;
 
 namespace CaptureTools
@@ -10,7 +9,6 @@ namespace CaptureTools
     partial class CaptureTools
     {
         // GUI.
-        //private Rect windowRect = new Rect(Screen.width * 0.75f, Screen.height / 2, 0, 0);
         private Rect windowRect = new Rect(Screen.width * 0.05f, Screen.height * 0.1f, 0, 0);
         private static GUIStyle boxStyle;
         private static GUIStyle textBoxStyle;
@@ -37,8 +35,9 @@ namespace CaptureTools
 
         //private static bool addedAppLauncherButton = false;
         private ApplicationLauncherButton appLauncherButton;
-        public bool guiEnabled = false;
+        public static bool guiEnabled = false;
         private bool guiHidden = false;
+        private bool loading = false;
 
         public bool showClapper = false;
         private static GUIStyle clapperStyle;
@@ -48,7 +47,7 @@ namespace CaptureTools
 
         internal void OnGUI()
         {
-            if (guiEnabled && !guiHidden)
+            if (guiEnabled && !guiHidden && !loading)
                 DrawGUI();
 
             DrawMulticamGUI();
@@ -102,8 +101,8 @@ namespace CaptureTools
                 InitStyles();
 
             GUILayout.BeginHorizontal();
-            //var sections = new string[] { "Capture", "Trace", "Timing", "Physics", "Animation", "HDRI" };
-            var sections = Enum.GetNames(typeof(UISection));
+            string[] sections = Enum.GetNames(typeof(UISection));
+            // todo: use GUILayout.Toolbar
             currentSection = (UISection)GUILayout.SelectionGrid((int)currentSection, sections, sections.Length, GUILayout.Width(windowWidth));
             GUILayout.EndHorizontal();
 
@@ -206,11 +205,10 @@ namespace CaptureTools
             // Frame of reference.
             GUILayout.BeginHorizontal();
             GUILayout.Label($"Sync: ");
-            var syncStrings = new string[] { "Physics", "Rendering" };
+            string[] syncStrings = new string[] { "Physics", "Rendering" };
             useFixedUpdate = 0 == GUILayout.SelectionGrid(useFixedUpdate ? 0 : 1, syncStrings, 2);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-
 
             fullRes = GUILayout.Toggle(fullRes, "Use Screen Resolution");
             previewOnly = GUILayout.Toggle(previewOnly, "Preview Only");
@@ -283,7 +281,7 @@ namespace CaptureTools
                     GUILayout.EndHorizontal();
                 }
 
-                SettingSlider("Smoothing", ref mainSmoothTime, 0.01f, 5f, 2);
+                SettingSlider("Smoothing", ref mainSmoothTime, 0, 5f, 2);
                 //SettingSlider("Smoothing Blend", ref positionSmoothing, 0f, 1f, 2);
 
                 //GUILayout.BeginHorizontal();
@@ -300,11 +298,11 @@ namespace CaptureTools
                 if (showMainSmoothingSection)
                 {
                     GUILayout.BeginVertical(boxStyle);
-                    SettingSliderToggle("Position", ref mainPositionSmoothTime, 0.01f, 2f, 2, ref positionSmoothingEnabled);
-                    SettingSlider("Pivot", ref pivotSmoothTime, 0.01f, 2f, 2);
-                    SettingSlider("Pan", ref panSmoothTime, 0.01f, 2f, 2);
-                    SettingSlider("Distance", ref distanceSmoothTime, 0.01f, 2f, 2);
-                    SettingSlider("Zoom", ref mainFOVsmoothTime, 0.01f, 2f, 2);
+                    SettingSliderToggle("Position", ref mainPositionSmoothTime, 0, 2f, 2, ref positionSmoothingEnabled);
+                    SettingSlider("Pivot", ref pivotSmoothTime, 0, 2f, 2);
+                    SettingSlider("Pan", ref panSmoothTime, 0, 2f, 2);
+                    SettingSlider("Distance", ref distanceSmoothTime, 0, 2f, 2);
+                    SettingSlider("Zoom", ref mainFOVsmoothTime, 0, 2f, 2);
                     GUILayout.EndVertical();
                 }
 
@@ -392,7 +390,7 @@ namespace CaptureTools
                 // Frame of reference.
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"Frame of Reference: ");
-                var frameStrings = Enum.GetNames(typeof(TraceFrame));
+                string[] frameStrings = Enum.GetNames(typeof(TraceFrame));
                 traceFrameOfReference = (TraceFrame)GUILayout.SelectionGrid((int)traceFrameOfReference, frameStrings, frameStrings.Length);
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
@@ -411,6 +409,8 @@ namespace CaptureTools
 
         private void TimingSection()
         {
+            // todo: move all of the application out of UI. It definitely doesn't belong here.
+
             GUILayout.BeginVertical(boxStyle);
 
             // Max delta time.
@@ -522,7 +522,7 @@ namespace CaptureTools
 
             if (GUILayout.Button("Interpolate Rigidbodies"))
             {
-                var rbs = FindObjectsOfType<Rigidbody>();
+                Rigidbody[] rbs = FindObjectsOfType<Rigidbody>();
                 if (rbs[0].interpolation == RigidbodyInterpolation.None)
                     rbs.ToList().ForEach(rb => rb.interpolation = RigidbodyInterpolation.Interpolate);
                 else if (rbs[0].interpolation == RigidbodyInterpolation.Interpolate)
@@ -801,6 +801,12 @@ namespace CaptureTools
 
         private void OnHideUI() =>
             guiHidden = true;
+
+        private void OnSceneLoaded(GameScenes data) =>
+            loading = false;
+
+        private void OnSceneRequested(GameScenes data) =>
+            loading = true;
 
         #endregion
     }
