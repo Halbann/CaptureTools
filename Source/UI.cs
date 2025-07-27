@@ -1,9 +1,10 @@
-﻿using CaptureTools.UI;
+using CaptureTools.UI;
 using KSP.UI.Screens;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace CaptureTools
@@ -20,6 +21,7 @@ namespace CaptureTools
         private static float sliderWidth = 220f;
         private static int entryHeight = 26;
         private static int maxVisibleEntries = 5;
+        private StringBuilder sb = new StringBuilder();
 
         // todo: move styles into a separate static class when the UI is refactored.
         private static bool initStyles = false;
@@ -790,15 +792,21 @@ namespace CaptureTools
             float recordingTimeMinutes = Mathf.Floor(recordingTime / 60);
             float recordingTimeSeconds = recordingTime % 60;
 
-            string colour = !preview ? "red" : "white";
-            string redlight = recording ? $"<color={colour}>●</color>" : "○";
+            sb.Clear();
 
-            string recordingText = !preview ? $"<b>{recordingTimeMinutes:00}:{recordingTimeSeconds:00}</b>" : "<b>PREVIEW</b>";
-            string buttonText = recording ? recordingText : "Record";
+            if (!recording)
+                sb.Append("○ Record");
+            else
+            {
+                if (!preview)
+                    sb.Append($"<color=red>●</color> <b>{recordingTimeMinutes:00}:{recordingTimeSeconds:00}</b>");
+                else
+                    sb.Append("<color=white>●</color> <b>PREVIEW</b>");
 
-            string recordingButtonText = redlight + " " + buttonText;
+                sb.Append($" <color=grey>({Mathf.RoundToInt(timeRatio * 100)}%)</color>");
+            }
 
-            return GUILayout.Button(recordingButtonText);
+            return GUILayout.Button(sb.ToString());
         }
 
         private void DrawClapper()

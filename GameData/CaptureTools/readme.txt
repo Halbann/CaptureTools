@@ -21,6 +21,7 @@ https://github.com/Halbann/CaptureTools/wiki
 - The UI now stays open between loading screens.
 - Smoothing can be set to zero, in which case smoothing will be skipped (previously had a small minimum).
 - The playback framerate now defaults to whatever the capture framerate is unless you enable the playback framerate slider.
+- The current time ratio (the speed of in-game time to real-time) is now displayed on the record button while recording.
 
 ## 1.3.0
 
