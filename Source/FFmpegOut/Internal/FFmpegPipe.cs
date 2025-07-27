@@ -42,7 +42,7 @@ namespace FFmpegOut
             {
                 if (!string.IsNullOrEmpty(e.Data))
                     UnityEngine.Debug.LogError("[Capture Tools]: FFmpeg error: " + e.Data);
-            }
+            };
 
             // Start copy/pipe subthreads.
             _copyThread = new Thread(CopyThread);
