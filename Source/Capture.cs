@@ -55,7 +55,7 @@ namespace CaptureTools
         public const int minFramerate = 1;
         public const int maxFramerate = 240;
 
-        public static float CRF = 18;
+        public static float CRF = 15;
         public static Constrained playbackFramerate = new Constrained(60, minFramerate, maxFramerate, 0);
         public static bool differentPlaybackFramerate = false;
         public static bool previewOnly = false;

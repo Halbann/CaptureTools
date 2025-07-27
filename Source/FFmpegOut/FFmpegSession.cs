@@ -53,13 +53,13 @@ namespace FFmpegOut
                 { "{path}", outputPath }
             };
 
-            if (CaptureTools.FFmpegPresets.currentPreset == null)
-            {
-                Debug.LogWarning("[CaptureTools]: No FFmpeg preset selected. Using default settings.");
-                CaptureTools.FFmpegPresets.currentPreset = CaptureTools.FFmpegPresets.fallbackPreset;
-            }
+            if (CaptureTools.FFmpegPresetLoader.CurrentPreset == null)
+                throw new InvalidOperationException(
+                    "No FFmpeg preset is currently selected. " +
+                    "Please select a preset before creating a session."
+                );
 
-            string formatted = LookupReplaceCaseInsensitive(lookup, CaptureTools.FFmpegPresets.currentPreset.Command);
+            string formatted = LookupReplaceCaseInsensitive(lookup, CaptureTools.FFmpegPresetLoader.CurrentPreset.Command);
 
             return new FFmpegSession(formatted);
         }

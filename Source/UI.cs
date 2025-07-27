@@ -1,4 +1,4 @@
-using CaptureTools.UI;
+﻿using CaptureTools.UI;
 using KSP.UI.Screens;
 using System;
 using System.Collections.Generic;
@@ -21,6 +21,7 @@ namespace CaptureTools
         private static float sliderWidth = 220f;
         private static int entryHeight = 26;
         private static int maxVisibleEntries = 5;
+        private static string presetAuthorNameColour = "grey";
         private StringBuilder sb = new StringBuilder();
 
         // todo: move styles into a separate static class when the UI is refactored.
@@ -44,6 +45,11 @@ namespace CaptureTools
 
         public bool showClapper = false;
         private static GUIStyle clapperStyle;
+
+        private bool registeredEvents = false;
+        private List<FFmpegPreset> presetsSorted = new List<FFmpegPreset>();
+
+        private SaveAs saveAs = null;
 
         // Sliders
         SettingSliderType captureFramerateSlider = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
@@ -220,77 +226,114 @@ namespace CaptureTools
             if (SectionButton("Encoding", ref showEncodingSection))
             {
                 GUILayout.BeginVertical(boxStyle);
-                FFmpegPreset current = FFmpegPresets.currentPreset;
+
+                // todo: move this out of UI.
+                if (!registeredEvents)
+                {
+                    Action onPresetsChanged = () =>
+                    {
+                        presetsSorted.Clear();
+                        presetsSorted.AddRange(FFmpegPresetLoader.presets.Values.OrderBy(p => p.Name));
+                    };
+
+                    FFmpegPresetLoader.OnPresetChanged += onPresetsChanged;
+                    onPresetsChanged();
+                    registeredEvents = true;
+                }
+
+                FFmpegPreset current = FFmpegPresetLoader.CurrentPreset;
 
                 UpdateFramerateSlider(playbackFramerateSlider, playbackFramerate, ref differentPlaybackFramerate);
                 SettingSlider("Quality (CRF)", ref CRF, 10, 40, 0);
 
-                if (current == null)
+                // todo: this if statement feels dumb.
+                if (saveAs != null && !saveAs.complete)
                 {
-                    Debug.LogError("current preset was null for some reason");
-                    current = FFmpegPresets.fallbackPreset;
+                    saveAs.Update();
                 }
-
-                GUILayout.BeginHorizontal();
-
-                // Name.
-                SectionButton(current.Name, ref showPresetsList);
-
-                GUIEnabled.Push(current != null);
-
-                // Save.
-                GUIEnabled.Push(current.editingAllowed);
-                if (GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", buttonStyle))) && current.editingAllowed)
-                    current.Save();
-
-                GUIEnabled.Pop(); // End of save button.
-
-                // Save as.
-                if (GUILayout.Button("Save As", GUILayout.Width(ContentSizeCache.Size("Save As", buttonStyle))))
+                else
                 {
-                    FFmpegPreset newPreset = new FFmpegPreset(current.Name + " COPY", true, current.Command);
-                    newPreset.Save(true);
-                    FFmpegPresets.Set(newPreset.Name);
+                    GUILayout.BeginHorizontal();
+
+                    // Name.
+                    SectionButton(current.Name, ref showPresetsList);
+
+                    GUIEnabled.Push(current != null);
+                    bool edited = current.Editable && current.Modified;
+
+                    // Save.
+                    GUIEnabled.Push(edited);
+                    if (GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", buttonStyle))) && edited)
+                        current.SaveToFile();
+                    GUIEnabled.Pop(); // End of save button.
+
+                    // Save as.
+                    if (GUILayout.Button("Save As", GUILayout.Width(ContentSizeCache.Size("Save As", buttonStyle))))
+                    {
+                        saveAs = new SaveAs(
+                            () =>
+                            {
+                                if (!saveAs.valid) return;
+
+                                FFmpegPreset newPreset = new FFmpegPreset(saveAs.text, current.Command, FFmpegPreset.defaultAuthor);
+                                if (FFmpegPresetLoader.AddPreset(newPreset))
+                                {
+                                    newPreset.SaveToFile();
+                                    FFmpegPresetLoader.SetCurrentPreset(saveAs.text);
+                                }
+
+                                saveAs = null;
+                            },
+                            () => saveAs = null,
+                            current.Name,
+                            s => !FFmpegPresetLoader.presets.ContainsKey(s));
+                    }
+
+                    // Reload.
+                    bool reloadable = (current.Editable && current.Modified) || !current.Editable;
+                    GUIEnabled.Push(reloadable);
+                    if (GUILayout.Button("Reload", GUILayout.Width(ContentSizeCache.Size("Reload", buttonStyle))) && reloadable)
+                        current.LoadFromFile();
+                    GUIEnabled.Pop();
+
+                    // Delete.
+                    GUIEnabled.Push(current.Editable && presetsSorted.Count > 1);
+                    if (GUILayout.Button("Delete", GUILayout.Width(ContentSizeCache.Size("Delete", buttonStyle))) && current.Editable && presetsSorted.Count > 1)
+                    {
+                        if (presetsSorted.Contains(current))
+                        {
+                            List<FFmpegPreset> list = presetsSorted;
+                            int index = (list.IndexOf(current) - 1 + list.Count) % list.Count;
+                            FFmpegPresetLoader.SetCurrentPreset(list[index].Name);
+                        }
+
+                        current.DeleteFile();
+                    }
+                    GUIEnabled.Pop(); // End of delete button.
+
+                    GUIEnabled.Pop(); // End of all buttons.
+                    GUILayout.EndHorizontal();
                 }
-
-                // Reload.
-                GUIEnabled.Push(current.editingAllowed);
-                if (GUILayout.Button("Reload", GUILayout.Width(ContentSizeCache.Size("Reload", buttonStyle))))
-                    current.Reload();
-                GUIEnabled.Pop();
-
-                // Delete.
-
-                GUIEnabled.Push(current.editingAllowed && FFmpegPresets.presets.Count > 1);
-                if (GUILayout.Button("Delete", GUILayout.Width(ContentSizeCache.Size("Delete", buttonStyle))) && current.editingAllowed)
-                    current.Delete();
-
-                GUIEnabled.Pop(); // End of delete button.
-
-                GUIEnabled.Pop(); // End of all buttons.
-                GUILayout.EndHorizontal();
 
                 if (showPresetsList)
                 {
                     GUILayout.BeginVertical(boxStyle);
-                    presetsScrollPosition = GUILayout.BeginScrollView(presetsScrollPosition, GUILayout.Height(Mathf.Min(FFmpegPresets.presets.Count * entryHeight, entryHeight * maxVisibleEntries)));
+                    presetsScrollPosition = GUILayout.BeginScrollView(presetsScrollPosition,
+                        GUILayout.Height(Mathf.Min(presetsSorted.Count * entryHeight, entryHeight * maxVisibleEntries)));
 
-                    foreach (KeyValuePair<string, FFmpegPreset> preset in FFmpegPresets.presets)
+                    foreach (FFmpegPreset preset in presetsSorted)
                     {
                         GUILayout.BeginHorizontal();
 
-                        if (GUILayout.Button(preset.Key))
+                        if (GUILayout.Button(GetPresetTitle(preset)))
                         {
-                            FFmpegPresets.Set(preset.Key);
+                            FFmpegPresetLoader.SetCurrentPreset(preset.Name);
                             showPresetsList = false;
                         }
 
-                        if (!string.IsNullOrEmpty(preset.Value.CfgPath))
-                        {
-                            // todo: doesn't work.
+                        if (!string.IsNullOrEmpty(preset.path))
                             if (GUILayout.Button("\\", GUILayout.Width(16)))
-                                Application.OpenURL(preset.Value.CfgPath);
-                        }
+                                Application.OpenURL(preset.path);
 
                         GUILayout.EndHorizontal();
                     }
@@ -299,8 +342,8 @@ namespace CaptureTools
                     GUILayout.EndVertical();
                 }
 
-                GUIEnabled.Push(current.editingAllowed);
-                FFmpegPresets.currentPreset.Command = GUILayout.TextArea(FFmpegPresets.currentPreset.Command, GUILayout.ExpandHeight(true));
+                GUIEnabled.Push(current.Editable);
+                FFmpegPresetLoader.CurrentPreset.Command = GUILayout.TextArea(FFmpegPresetLoader.CurrentPreset.Command, GUILayout.ExpandHeight(true));
                 GUIEnabled.Pop();
 
                 GUILayout.BeginHorizontal();
@@ -834,6 +877,9 @@ namespace CaptureTools
             slider.Update(ref framerateValue, ref toggle);
             framerate.Value = RoundFramerate(framerateValue);
         }
+
+        private string GetPresetTitle(FFmpegPreset preset) =>
+            $"{preset.Name}  <color={presetAuthorNameColour}>{preset.Author}</color>";
 
         public void AddToolbarButton()
         {
