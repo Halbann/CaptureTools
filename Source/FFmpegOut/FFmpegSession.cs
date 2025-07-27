@@ -1,16 +1,16 @@
 // FFmpegOut - FFmpeg video encoding plugin for Unity
 // https://github.com/keijiro/KlakNDI
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Rendering;
-using System.Collections.Generic;
-using System;
-using UnityEngine.Playables;
-using System.IO;
 
 namespace FFmpegOut
 {
-    public sealed class FFmpegSession : System.IDisposable
+    public sealed class FFmpegSession : IDisposable
     {
         #region Factory methods
 
@@ -22,10 +22,8 @@ namespace FFmpegOut
         {
             name = DateTime.Now.ToString("yyyy MM dd HHmmss") + (name == "" ? "" : (" " + name));
 
-            if (path == "")
-                path = name.Replace(" ", "_") + preset.GetSuffix();
-            else
-                path = Path.Combine(path, name.Replace(" ", "_") + preset.GetSuffix());
+            string filename = name.Replace(" ", "_");
+            path = path == "" ? filename : Path.Combine(path, filename);
 
             return CreateWithOutputPath(path, width, height, frameRate, preset, CRF);
         }
@@ -40,23 +38,43 @@ namespace FFmpegOut
             int ff = (int)Mathf.Floor(frameRate * (timespan.Milliseconds / 1000f));
             string timecode = string.Format(
                 "{0:00}:{1:00}:{2:00}:{3:00}",
-                timespan.Hours, timespan.Minutes, 
+                timespan.Hours, timespan.Minutes,
                 timespan.Seconds, ff);
 
-            string pathString = " \"" + outputPath + "\"";
+            // todo: fix timecode warning
 
-            return new FFmpegSession(
-                "-r " + (int)frameRate
-                + " -y -f rawvideo -vcodec rawvideo -pixel_format rgba"
-                + " -colorspace bt709"
-                + " -video_size " + width + "x" + height
-                + " -framerate " + (int)frameRate
-                + " -loglevel warning -i - " + preset.GetOptions()
-                //+ " -metadata creation_time=\"$(date +'%F %T')\""
-                + " -timecode " + timecode
-                + " -crf " + CRF.ToString()
-                + pathString
-            );
+            Dictionary<string, string> lookup = new Dictionary<string, string>
+            {
+                { "{width}", width.ToString() },
+                { "{height}", height.ToString() },
+                { "{framerate}", ((int)frameRate).ToString() },
+                { "{timecode}", timecode},
+                { "{crf}", CRF.ToString() },
+                { "{path}", outputPath }
+            };
+
+            if (CaptureTools.FFmpegPresets.currentPreset == null)
+            {
+                Debug.LogWarning("[CaptureTools]: No FFmpeg preset selected. Using default settings.");
+                CaptureTools.FFmpegPresets.currentPreset = CaptureTools.FFmpegPresets.fallbackPreset;
+            }
+
+            string formatted = LookupReplaceCaseInsensitive(lookup, CaptureTools.FFmpegPresets.currentPreset.Command);
+
+            return new FFmpegSession(formatted);
+        }
+
+        private static string LookupReplaceCaseInsensitive(Dictionary<string, string> lookup, string input)
+        {
+            // Replace all instances of pair.Key with pair.Value, case insensitive.
+
+            foreach (KeyValuePair<string, string> pair in lookup)
+            {
+                string pattern = Regex.Escape(pair.Key);
+                input = Regex.Replace(input, pattern, pair.Value, RegexOptions.IgnoreCase);
+            }
+
+            return input;
         }
 
         public static FFmpegSession CreateWithArguments(string arguments)
@@ -86,7 +104,7 @@ namespace FFmpegOut
         {
             if (_pipe != null)
             {
-                var error = _pipe.CloseAndGetOutput();
+                string error = _pipe.CloseAndGetOutput();
 
                 if (!string.IsNullOrEmpty(error))
                     Debug.LogWarning(
@@ -124,7 +142,7 @@ namespace FFmpegOut
                     "Failed to initialize an FFmpeg session due to missing " +
                     "executable file. Please check FFmpeg installation."
                 );
-            else if (!UnityEngine.SystemInfo.supportsAsyncGPUReadback)
+            else if (!SystemInfo.supportsAsyncGPUReadback)
                 Debug.LogWarning(
                     "Failed to initialize an FFmpeg session due to lack of " +
                     "async GPU readback support. Please try changing " +
@@ -162,12 +180,12 @@ namespace FFmpegOut
             // Lazy initialization of the preprocessing blit shader
             if (_blitMaterial == null)
             {
-                var shader = FFmpegOutAssets.preprocessShader;
+                Shader shader = FFmpegOutAssets.preprocessShader;
                 _blitMaterial = new Material(shader);
             }
 
             // Blit to a temporary texture and request readback on it.
-            var rt = RenderTexture.GetTemporary
+            RenderTexture rt = RenderTexture.GetTemporary
                 (source.width, source.height, 0, RenderTextureFormat.ARGB32);
             Graphics.Blit(source, rt, _blitMaterial, 0);
             _readbackQueue.Add(AsyncGPUReadback.Request(rt));
@@ -197,7 +215,7 @@ namespace FFmpegOut
                 }
 
                 // Retrieve the first entry in the queue.
-                var req = _readbackQueue[0];
+                AsyncGPUReadbackRequest req = _readbackQueue[0];
                 _readbackQueue.RemoveAt(0);
 
                 // Error detection

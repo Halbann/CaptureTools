@@ -11,6 +11,7 @@ https://github.com/Halbann/CaptureTools/wiki
 
 ## 1.4.0
 
+- Added an option to edit the ffmpeg command line directly. Useful for experimenting with GPU encoders like NVENC.
 - Fixed the black frame appearing at the beginning of video files.
 - Fixed EVE volumetric clouds not appearing in the first frame of video files.
 - Fixed a bug where the focus of the flight camera rotating suddenly would cause the main camera to lose its orientation.

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Linq;
 using System.IO;
@@ -582,6 +582,7 @@ namespace CaptureTools
             settings.SetValue("previewOnly", previewOnly, true);
             settings.SetValue("fullRes", fullRes, true);
             settings.SetValue("CRF", CRF, true);
+            settings.SetValue("currentPreset", FFmpegPresets.currentPreset?.Name ?? "None", true);
 
             // Main
             settings.SetValue("mainCaptureAudio", mainCaptureAudio, true);
@@ -650,7 +651,11 @@ namespace CaptureTools
             settings.TryGetValue("fullRes", ref fullRes);
             settings.TryGetValue("CRF", ref CRF);
 
-            // Main
+            string presetName = string.Empty;
+            if (settings.TryGetValue("currentPreset", ref presetName))
+                FFmpegPresets.Set(presetName);
+
+            // Main 
             settings.TryGetValue("mainCaptureAudio", ref mainCaptureAudio);
             settings.TryGetValue("audioOnly", ref audioOnly);
             //settings.TryGetValue("positionSmoothing", ref positionSmoothing);
