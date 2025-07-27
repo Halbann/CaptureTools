@@ -141,6 +141,9 @@
     <Compile Include="Trace.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI.cs" />
+    <Compile Include="UI\ContentSizeCache.cs" />
+    <Compile Include="UI\GUIEnabled.cs" />
+    <Compile Include="UI\SettingSliderType.cs" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)\GameData\CaptureTools\Plugins\$(ProjectName).dll"
