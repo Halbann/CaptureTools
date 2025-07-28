@@ -6,14 +6,17 @@ namespace CaptureTools.UI
 {
     public class SaveAs
     {
+        public string Text => textTrimmed;
         public bool valid = true;
-        public string text = "";
         public Func<string, bool> validity;
-        public Action onSave;
+        public Action<string> onSave;
         public Action onCancel;
         public bool complete = false;
+        
+        private string text = "";
+        private string textTrimmed;
 
-        public SaveAs(Action onSave, Action onCancel, string initialText = "", Func<string, bool> validity = null)
+        public SaveAs(Action<string> onSave, Action onCancel, string initialText = "", Func<string, bool> validity = null)
         {
             text = initialText;
             this.validity = validity;
@@ -30,19 +33,20 @@ namespace CaptureTools.UI
                 GUI.color = Color.red;
 
             text = GUILayout.TextField(text);
+            textTrimmed = text.Trim();
 
             if (!valid)
                 GUI.color = guiColour;
 
-            valid = !string.IsNullOrEmpty(text) && text.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+            valid = !string.IsNullOrEmpty(textTrimmed) && textTrimmed.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
             if (validity != null)
-                valid = valid && validity(text);
+                valid = valid && validity(textTrimmed);
 
             GUIEnabled.Push(valid);
             if ((GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", CaptureTools.buttonStyle))) || Input.GetKey(KeyCode.KeypadEnter)) && valid)
             {
                 complete = true;
-                onSave?.Invoke();
+                onSave?.Invoke(textTrimmed);
             }
             GUIEnabled.Pop();
 

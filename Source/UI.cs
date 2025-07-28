@@ -271,15 +271,13 @@ namespace CaptureTools
                     if (GUILayout.Button("Save As", GUILayout.Width(ContentSizeCache.Size("Save As", buttonStyle))))
                     {
                         saveAs = new SaveAs(
-                            () =>
+                            s =>
                             {
-                                if (!saveAs.valid) return;
-
-                                FFmpegPreset newPreset = new FFmpegPreset(saveAs.text, current.Command, FFmpegPreset.defaultAuthor);
+                                FFmpegPreset newPreset = new FFmpegPreset(s, current.Command, FFmpegPreset.defaultAuthor);
                                 if (FFmpegPresetLoader.AddPreset(newPreset))
                                 {
                                     newPreset.SaveToFile();
-                                    FFmpegPresetLoader.SetCurrentPreset(saveAs.text);
+                                    FFmpegPresetLoader.SetCurrentPreset(s);
                                 }
 
                                 saveAs = null;
