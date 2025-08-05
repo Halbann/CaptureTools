@@ -104,14 +104,7 @@ namespace FFmpegOut
         {
             if (_pipe != null)
             {
-                string error = _pipe.CloseAndGetOutput();
-
-                if (!string.IsNullOrEmpty(error))
-                    Debug.LogWarning(
-                        "FFmpeg returned with warning/error messages. " +
-                        "See the following lines for details:\n" + error
-                    );
-
+                _pipe.Close();
                 _pipe.Dispose();
                 _pipe = null;
             }
@@ -138,14 +131,12 @@ namespace FFmpegOut
         FFmpegSession(string arguments)
         {
             if (!FFmpegPipe.IsAvailable)
-                Debug.LogWarning(
-                    "Failed to initialize an FFmpeg session due to missing " +
-                    "executable file. Please check FFmpeg installation."
+                throw new Exception(
+                    "Missing executable file. Please check FFmpeg installation."
                 );
             else if (!SystemInfo.supportsAsyncGPUReadback)
-                Debug.LogWarning(
-                    "Failed to initialize an FFmpeg session due to lack of " +
-                    "async GPU readback support. Please try changing " +
+                throw new Exception(
+                    "Lack of async GPU readback support. Please try changing " +
                     "graphics API to readback-enabled one."
                 );
             else

@@ -1,16 +1,23 @@
 // FFmpegOut - FFmpeg video encoding plugin for Unity
 // https://github.com/keijiro/KlakNDI
 
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Unity.Collections;
+using Debug = UnityEngine.Debug;
 
 namespace FFmpegOut
 {
-    public sealed class FFmpegPipe : System.IDisposable
+    public sealed class FFmpegPipe : IDisposable
     {
+        public static string[] errorKeywords = { "error", "failed", "invalid", "unable", "not found" };
+        private ConcurrentQueue<string> errorQueue = new ConcurrentQueue<string>();
+
         #region Public methods
 
         public static bool IsAvailable
@@ -20,7 +27,7 @@ namespace FFmpegOut
 
         public FFmpegPipe(string arguments)
         {
-            UnityEngine.Debug.Log("[CaptureTools]: Creating new FFmpeg pipe. Arguments: " + arguments);
+            Debug.Log("[CaptureTools]: Creating new FFmpeg pipe. Arguments: " + arguments);
 
             // Start FFmpeg subprocess.
             _subprocess = Process.Start(new ProcessStartInfo
@@ -34,15 +41,16 @@ namespace FFmpegOut
                 RedirectStandardError = true
             });
 
-            // todo: this and _subprocess.ErrorDataReceived doesn't work . figure out proper ffmpeg error handling.
-            if (_subprocess == null)
-                throw new System.Exception("Failed to start FFmpeg subprocess.");
+            if (_subprocess == null || _subprocess.HasExited)
+                throw new Exception("Failed to start FFmpeg subprocess.");
 
             _subprocess.ErrorDataReceived += (sender, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
-                    UnityEngine.Debug.LogError("[Capture Tools]: FFmpeg error: " + e.Data);
+                    errorQueue.Enqueue(e.Data);
             };
+
+            _subprocess.BeginErrorReadLine();
 
             // Start copy/pipe subthreads.
             _copyThread = new Thread(CopyThread);
@@ -51,8 +59,30 @@ namespace FFmpegOut
             _pipeThread.Start();
         }
 
+        private void ReadError()
+        {
+            while (errorQueue.TryDequeue(out string error))
+            {
+                if (string.IsNullOrEmpty(error))
+                    continue;
+
+                if (!errorKeywords.Any(k => error.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    Debug.Log("[Capture Tools]: FFmpeg output: " + error);
+                    continue;
+                }
+
+                Debug.LogError("[Capture Tools]: FFmpeg error detected: " + error);
+
+                throw new Exception("Encountered an error in the FFmpeg subprocess. " +
+                                    "Please check the log for details.");
+            }
+        }
+
         public void PushFrameData(NativeArray<byte> data)
         {
+            ReadError();
+
             // Update the copy queue and notify the copy thread with a ping.
             lock (_copyQueue) _copyQueue.Enqueue(data);
             _copyPing.Set();
@@ -60,6 +90,8 @@ namespace FFmpegOut
 
         public void SyncFrameData()
         {
+            ReadError();
+
             // Wait for the copy queue to get emptied with using pong
             // notification signals sent from the copy thread.
             while (_copyQueue.Count > 0) _copyPong.WaitOne();
@@ -71,7 +103,7 @@ namespace FFmpegOut
             while (_pipeQueue.Count > 4) _pipePong.WaitOne();
         }
 
-        public string CloseAndGetOutput()
+        public void Close()
         {
             // Terminate the subthreads.
             _terminate = true;
@@ -83,17 +115,12 @@ namespace FFmpegOut
             _pipeThread.Join();
 
             // Close FFmpeg subprocess.
+            _subprocess.CancelErrorRead();
             _subprocess.StandardInput.Close();
             _subprocess.WaitForExit();
 
-            StreamReader outputReader = _subprocess.StandardError;
-            string error = outputReader.ReadToEnd();
-
             _subprocess.Close();
             _subprocess.Dispose();
-
-            outputReader.Close();
-            outputReader.Dispose();
 
             // Nullify members (just for ease of debugging).
             _subprocess = null;
@@ -101,8 +128,6 @@ namespace FFmpegOut
             _pipeThread = null;
             _copyQueue = null;
             _pipeQueue = _freeBuffer = null;
-
-            return error;
         }
 
         #endregion
@@ -111,7 +136,7 @@ namespace FFmpegOut
 
         public void Dispose()
         {
-            if (!_terminate) CloseAndGetOutput();
+            if (!_terminate) Close();
         }
 
         ~FFmpegPipe()

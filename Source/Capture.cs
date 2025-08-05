@@ -893,8 +893,12 @@ namespace CaptureTools
                 camCap.outputName = fileName;
                 camCap.CRF = Mathf.RoundToInt(CRF);
                 camCap.drawMainUI = mainCamera && drawUIOnMain;
-
                 camCap.path = path;
+                camCap.OnError += () =>
+                {
+                    CaptureMain = false;
+                    CaptureMulti = false;
+                };
             }
 
             if (mainCamera && mainCaptureAudio)
