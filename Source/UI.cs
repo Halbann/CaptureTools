@@ -23,6 +23,7 @@ namespace CaptureTools
         private static int maxVisibleEntries = 5;
         private static string presetAuthorNameColour = "grey";
         private StringBuilder sb = new StringBuilder();
+        private static string windowTitle = $"{Meta.name} {Meta.version}";
 
         // todo: move styles into a separate static class when the UI is refactored.
         private static bool initStyles = false;
@@ -75,7 +76,7 @@ namespace CaptureTools
         }
 
         public void DrawGUI() =>
-            windowRect = GUILayout.Window(windowID, windowRect, FillWindow, "Capture Tools", GUILayout.Height(1), GUILayout.Width(windowWidth));
+            windowRect = GUILayout.Window(windowID, windowRect, FillWindow, windowTitle, GUILayout.Height(1), GUILayout.Width(windowWidth));
 
         private void InitStyles()
         {
@@ -113,6 +114,25 @@ namespace CaptureTools
 
             if (GUI.Button(new Rect(windowRect.width - (18 * 2), 2, 16, 16), "\\", smallTextButtonStyle))
                 Application.OpenURL(Path.GetFullPath(FilePath));
+
+            if (GUI.Button(new Rect(windowRect.width - (18 * 3), 2, 16, 16), "?", smallTextButtonStyle))
+            {
+                string wikiURL = @"https://github.com/Halbann/CaptureTools/wiki/";
+                Dictionary<UISection, string> sectionPageMap = new Dictionary<UISection, string>
+                {
+                    { UISection.Capture, "Capture" },
+                    { UISection.Trace, "Trace" },
+                    { UISection.Physics, "Physics" },
+                    { UISection.Animation, "Animation" },
+                    { UISection.HDRI, "HDRI" }
+                    // note: no timing section.
+                };
+
+                if (sectionPageMap.TryGetValue(currentSection, out string page))
+                    wikiURL += page;
+
+                Application.OpenURL(wikiURL);
+            }
 
             if (!initStyles)
                 InitStyles();
