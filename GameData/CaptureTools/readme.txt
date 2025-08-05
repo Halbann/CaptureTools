@@ -11,17 +11,24 @@ https://github.com/Halbann/CaptureTools/wiki
 
 ## 1.4.0
 
-- Added an option to edit the ffmpeg command line directly. Useful for experimenting with GPU encoders like NVENC.
+- Added an FFmpeg encoding preset system using config files. Works much like TUFX presets. Presets created in-game are stored in PluginData but can easily be packaged into mods. Stock presets include x264, NVENC HEVC, AV1 and more.
 - Fixed the black frame appearing at the beginning of video files.
 - Fixed EVE volumetric clouds not appearing in the first frame of video files.
 - Fixed a bug where the focus of the flight camera rotating suddenly would cause the main camera to lose its orientation.
 - Fixed a bug where the atmosphere would flicker with Scatterer and Texture Replacer's real time reflections enabled.
 - Fixed various bugs with Deferred integration (blurry terrain, ambient light, motion blur artefacts).
 - Fixed Scatterer sunflare and sunlight colour modulation.
-- The UI now stays open between loading screens.
+- The UI now stays open after loading screens.
 - Smoothing can be set to zero, in which case smoothing will be skipped (previously had a small minimum).
 - The playback framerate now defaults to whatever the capture framerate is unless you enable the playback framerate slider.
 - The current time ratio (the speed of in-game time to real-time) is now displayed on the record button while recording.
+- Fixed a bug where settings in the Timing section could be set to unsafe values.
+- Moved Playback framerate and CRF settings to a new Encoding sub-section.
+- Added a button that runs a batch script to get info about available encoders.
+- Added a help button that opens the Capture Tools wiki page relevant to the current section.
+- Reduced default CRF from 18 to 15.
+- Added FFmpeg error handling that prints on-screen, to the debug console and in KSP.log. Previously Capture would fail silently if there was an encoding error.
+
 
 ## 1.3.0
 
