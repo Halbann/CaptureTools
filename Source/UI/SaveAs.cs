@@ -32,6 +32,18 @@ namespace CaptureTools.UI
             if (!valid)
                 GUI.color = Color.red;
 
+            // Check if enter or escape were pressed.
+            bool enter = false;
+            bool escape = false;
+            var e = Event.current;
+            if (e.type == EventType.KeyDown)
+            {
+                if (e.keyCode == KeyCode.Return)
+                    enter = true;
+                else if (e.keyCode == KeyCode.Escape)
+                    escape = true;
+            }
+
             text = GUILayout.TextField(text);
             textTrimmed = text.Trim();
 
@@ -43,14 +55,14 @@ namespace CaptureTools.UI
                 valid = valid && validity(textTrimmed);
 
             GUIEnabled.Push(valid);
-            if ((GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", CaptureTools.buttonStyle))) || Input.GetKey(KeyCode.KeypadEnter)) && valid)
+            if ((enter || GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", CaptureTools.buttonStyle)))) && valid)
             {
                 complete = true;
                 onSave?.Invoke(textTrimmed);
             }
             GUIEnabled.Pop();
 
-            if (GUILayout.Button("Cancel", GUILayout.Width(ContentSizeCache.Size("Cancel", CaptureTools.buttonStyle))) || Input.GetKey(KeyCode.Escape))
+            if (escape || GUILayout.Button("Cancel", GUILayout.Width(ContentSizeCache.Size("Cancel", CaptureTools.buttonStyle))))
             {
                 complete = true;
                 onCancel?.Invoke();
