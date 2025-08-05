@@ -346,9 +346,14 @@ namespace CaptureTools
 
                 GUILayout.BeginHorizontal();
 
-                string url = @"https://ffmpeg.org/ffmpeg.html";
+                const string ffmpegURL = @"https://www.ffmpeg.org/ffmpeg-all.html";
                 if (GUILayout.Button("Open FFmpeg Docs"))
-                    Application.OpenURL(url);
+                    Application.OpenURL(ffmpegURL);
+
+                const string encoderBatURL = "GameData\\CaptureTools\\FFmpeg\\Windows\\getInfoAboutEncoders.bat";
+                if (GUILayout.Button("Get Encoder Info"))
+                    if (File.Exists(encoderBatURL))
+                        Application.OpenURL(encoderBatURL);
 
                 GUILayout.EndHorizontal();
 
