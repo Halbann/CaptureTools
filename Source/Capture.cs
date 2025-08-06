@@ -1,14 +1,12 @@
+using CaptureTools.Integration;
+using FFmpegOut;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Collections;
-
 using UnityEngine;
-
-using FFmpegOut;
-using CaptureTools.Integration;
 
 namespace CaptureTools
 {
@@ -57,7 +55,7 @@ namespace CaptureTools
         public const int minFramerate = 1;
         public const int maxFramerate = 240;
 
-        public static float CRF = 18;
+        public static float CRF = 15;
         public static Constrained playbackFramerate = new Constrained(60, minFramerate, maxFramerate, 0);
         public static bool differentPlaybackFramerate = false;
         public static bool previewOnly = false;
@@ -222,19 +220,19 @@ namespace CaptureTools
             mainRenderTexture.wrapMode = TextureWrapMode.Clamp;
             mainRenderTexture.Create();
 
-            var cameraNames = isEditor ? new List<string> { "Main Camera" } : CaptureTools.cameraNames;
+            List<string> cameraNames = isEditor ? new List<string> { "Main Camera" } : CaptureTools.cameraNames;
 
             // Create clones of the main, scaled-space and galaxy cameras.
             foreach (string cameraName in cameraNames)
             {
-                var camObject = new GameObject();
+                GameObject camObject = new GameObject();
                 camObject.name = "Capture Tools Main - " + cameraName;
                 camObject.transform.position = Vector3.zero;
 
                 Camera cam = camObject.AddComponent<Camera>();
                 mainCameras.Add(cam);
 
-                var template = Camera.allCameras.FirstOrDefault(c => c.name == cameraName);
+                Camera template = Camera.allCameras.FirstOrDefault(c => c.name == cameraName);
                 cam.CopyFrom(template);
 
                 cam.fieldOfView = 20;
@@ -326,15 +324,15 @@ namespace CaptureTools
 
             // debug transforms
 
-            var pivotDebug = mainCameraPivot.AddComponent<DrawTransform>();
+            DrawTransform pivotDebug = mainCameraPivot.AddComponent<DrawTransform>();
             pivotDebug.text = "Main Pivot";
             pivotDebug.scale = 6;
 
-            var parentDebug = mainCameraParent.AddComponent<DrawTransform>();
+            DrawTransform parentDebug = mainCameraParent.AddComponent<DrawTransform>();
             parentDebug.text = "Main Parent";
             parentDebug.scale = 3;
 
-            var mainDebug = main.gameObject.AddComponent<DrawTransform>();
+            DrawTransform mainDebug = main.gameObject.AddComponent<DrawTransform>();
             mainDebug.text = "Main Camera";
             mainDebug.scale = 3;
         }
@@ -463,9 +461,9 @@ namespace CaptureTools
 
                 // Gradually push the camera back to the parent for when it transitions onto the pivot.
 
-                main.transform.localPosition = SmoothDampV(main.transform.localPosition, Vector3.zero, 
+                main.transform.localPosition = SmoothDampV(main.transform.localPosition, Vector3.zero,
                     ref pivotTransitionPosVelocity, mainSmoothTime, mainMaxSpeed, deltaTime);
-                main.transform.localRotation = SmoothDampQ(main.transform.localRotation, Quaternion.identity, 
+                main.transform.localRotation = SmoothDampQ(main.transform.localRotation, Quaternion.identity,
                     ref pivotTransitionRotVelocity, mainSmoothTime, mainMaxSpeed, deltaTime);
 
 
@@ -487,7 +485,7 @@ namespace CaptureTools
 
                 if (positionSmoothingEnabled)
                 {
-                    transitionalSpeed = Mathf.SmoothDamp(transitionalSpeed, 0, ref transitionalSpeedVelocity, 
+                    transitionalSpeed = Mathf.SmoothDamp(transitionalSpeed, 0, ref transitionalSpeedVelocity,
                         transitionalSpeedSmoothTime * mainSmoothTime, transitionalSpeedMaxSpeed, deltaTime);
 
                     float error = toTarget.magnitude;
@@ -528,7 +526,7 @@ namespace CaptureTools
 
                 FlightCamera fc = FlightCamera.fetch;
                 Quaternion targetRot = fc.getReferenceFrame()
-                    * Quaternion.AngleAxis(fc.camHdg * Mathf.Rad2Deg, Vector3.up) 
+                    * Quaternion.AngleAxis(fc.camHdg * Mathf.Rad2Deg, Vector3.up)
                     * Quaternion.AngleAxis(fc.camPitch * Mathf.Rad2Deg, Vector3.right);
 
                 if (isFlight && positionSmoothingEnabled)
@@ -546,7 +544,7 @@ namespace CaptureTools
                     targetRot = Quaternion.Slerp(targetRot, lookAtTarget, Mathf.InverseLerp(5, 50, toTargetActual.magnitude));
                 }
 
-                mainCameraPivot.transform.rotation = SmoothDampQ(lastRotation, targetRot, 
+                mainCameraPivot.transform.rotation = SmoothDampQ(lastRotation, targetRot,
                     ref smoothPivotSpeed, Mathf.Max(mainSmoothTime * pivotSmoothTime, minSmoothTime), mainMaxSpeed, deltaTime);
 
                 lastRotation = mainCameraPivot.transform.rotation;
@@ -556,7 +554,7 @@ namespace CaptureTools
 
                 Quaternion currentParentRot = mainCameraParent.transform.localRotation;
                 Quaternion targetParentRot = flightCamera.transform.parent.localRotation;
-                Quaternion smoothedParentRot = SmoothDampQ(currentParentRot, targetParentRot, 
+                Quaternion smoothedParentRot = SmoothDampQ(currentParentRot, targetParentRot,
                     ref smoothParentSpeed, Mathf.Max(mainSmoothTime * panSmoothTime, minSmoothTime), mainMaxSpeed, deltaTime);
 
                 mainCameraParent.transform.localRotation = smoothedParentRot;
@@ -570,10 +568,10 @@ namespace CaptureTools
                 }
 
                 // Instant reset when starting a path in Camera Tools.
-                if (cameraToolsLoaded 
+                if (cameraToolsLoaded
                     && (Input.GetKeyDown(cameraToolsCameraKey)))
                 {
-                    var toolModeField = camToolsInstance.GetType().GetField("toolMode", BindingFlags.Public | BindingFlags.Instance);
+                    FieldInfo toolModeField = camToolsInstance.GetType().GetField("toolMode", BindingFlags.Public | BindingFlags.Instance);
                     int toolMode = (int)toolModeField.GetValue(camToolsInstance);
 
                     // Only in pathing mode.
@@ -598,9 +596,9 @@ namespace CaptureTools
                 mainCameras[1].transform.rotation = main.transform.rotation;
             }
 
-            foreach (var cam in mainCameras)
+            foreach (Camera cam in mainCameras)
             {
-                cam.fieldOfView = Mathf.SmoothDamp(cam.fieldOfView, flightCamera.fieldOfView, 
+                cam.fieldOfView = Mathf.SmoothDamp(cam.fieldOfView, flightCamera.fieldOfView,
                     ref mainFOVvelocity, Mathf.Max(mainFOVsmoothTime * mainSmoothTime, minSmoothTime), mainFOVmaxSpeed, deltaTime);
             }
 
@@ -644,7 +642,7 @@ namespace CaptureTools
             //mainCameraPivot.transform.rotation = flightCamera.transform.rotation;
             //mainCameraParent.transform.localRotation = Quaternion.identity;
 
-            foreach (var cam in mainCameras)
+            foreach (Camera cam in mainCameras)
             {
                 cam.fieldOfView = flightCamera.fieldOfView;
             }
@@ -779,26 +777,26 @@ namespace CaptureTools
 
         void SetupVessel(Vessel vessel)
         {
-            var vesselCameras = new List<Camera>();
+            List<Camera> vesselCameras = new List<Camera>();
 
-            var format = FlightCamera.fetch.mainCamera.allowHDR ? RenderTextureFormat.Default : RenderTextureFormat.DefaultHDR;
+            RenderTextureFormat format = FlightCamera.fetch.mainCamera.allowHDR ? RenderTextureFormat.Default : RenderTextureFormat.DefaultHDR;
             // idk bro. don't ask me. rt needs to be a different format from the camera when using TUFX or it draws over the main camera rt for each vessel.
 
             // Setup render texture.
-            RenderTexture renderTexture = new RenderTexture(renderWidth, renderHeight, 24, format); 
+            RenderTexture renderTexture = new RenderTexture(renderWidth, renderHeight, 24, format);
             renderTexture.antiAliasing = QualitySettings.antiAliasing;
             renderTextures.Add(renderTexture);
 
             // Create clones of the main, scaled-space and galaxy cameras.
             foreach (string cameraName in cameraNames)
             {
-                var camObject = new GameObject();
+                GameObject camObject = new GameObject();
                 camObject.name = vessel.GetDisplayName() + cameraName;
                 //cameras.Add(camObject);
                 Camera cam = camObject.AddComponent<Camera>();
                 vesselCameras.Add(cam);
 
-                var template = Camera.allCameras.FirstOrDefault(c => c.name == cameraName);
+                Camera template = Camera.allCameras.FirstOrDefault(c => c.name == cameraName);
                 cam.CopyFrom(template);
 
                 cam.fieldOfView = 20;
@@ -840,13 +838,13 @@ namespace CaptureTools
             //vesselTargets.Add(null);
             //targetVectorsLerped.Add(Vector3.zero);
 
-            var pivot = new GameObject("Multicam Pivot");
+            GameObject pivot = new GameObject("Multicam Pivot");
 
             main.transform.SetParent(pivot.transform, false);
             pivot.transform.position = vessel.CoM;
             pivot.transform.rotation = Quaternion.identity;
 
-            var setup = new MultiSetup
+            MultiSetup setup = new MultiSetup
             {
                 vessel = vessel,
                 cameras = vesselCameras,
@@ -895,8 +893,12 @@ namespace CaptureTools
                 camCap.outputName = fileName;
                 camCap.CRF = Mathf.RoundToInt(CRF);
                 camCap.drawMainUI = mainCamera && drawUIOnMain;
-
                 camCap.path = path;
+                camCap.OnError += () =>
+                {
+                    CaptureMain = false;
+                    CaptureMulti = false;
+                };
             }
 
             if (mainCamera && mainCaptureAudio)
@@ -920,7 +922,7 @@ namespace CaptureTools
 
         void RemoveVessel(Vessel vessel)
         {
-            var setup = multiSetups.Find(s => s.vessel == vessel);
+            MultiSetup setup = multiSetups.Find(s => s.vessel == vessel);
 
             // Stop the recording.
             try
@@ -976,7 +978,7 @@ namespace CaptureTools
             int slotsAvailable = (int)shipLimit - multiSetups.Count;
             if (slotsAvailable > 0)
             {
-                var missingVessels = FlightGlobals.VesselsLoaded;
+                List<Vessel> missingVessels = FlightGlobals.VesselsLoaded;
                 missingVessels = missingVessels.FindAll(v => multiSetups.Find(s => s.vessel == v) == null);
                 missingVessels.RemoveAll(v => !VesselValid(v));
 
@@ -1035,7 +1037,7 @@ namespace CaptureTools
                     setup.pivot.rotation = pivotTarget;
 
                 // Store current, and set to target to make the next step easier.
-                var currentPivot = setup.pivot.rotation;
+                Quaternion currentPivot = setup.pivot.rotation;
                 setup.pivot.rotation = pivotTarget;
 
 
@@ -1081,7 +1083,7 @@ namespace CaptureTools
                 vesselCameras[0].transform.rotation = main.transform.rotation;
                 vesselCameras[1].transform.rotation = main.transform.rotation;
 
-                foreach (var cam in vesselCameras)
+                foreach (Camera cam in vesselCameras)
                 {
                     cam.fieldOfView = cameraFov;
                 }
@@ -1090,7 +1092,7 @@ namespace CaptureTools
                 if (setup.debugTransform == null)
                 {
                     setup.debugTransform = new GameObject("Multicam Transform - " + setup.vessel.name).transform;
-                    var debug = setup.debugTransform.gameObject.AddComponent<DrawTransform>();
+                    DrawTransform debug = setup.debugTransform.gameObject.AddComponent<DrawTransform>();
                     debug.text = setup.vessel.name;
                     debug.scale = 3;
                     debug.enabled = false;
@@ -1295,7 +1297,7 @@ namespace CaptureTools
                 float x = Screen.width - margin - width;
                 float y = margin;
 
-                var rect = new Rect(x, y, width, height);
+                Rect rect = new Rect(x, y, width, height);
                 Graphics.DrawTexture(rect, mainRenderTexture, renderTextureMaterial);
             }
         }
@@ -1316,11 +1318,11 @@ namespace CaptureTools
                 Component layer = camera.gameObject.AddComponent(layerType);
 
                 // set the volume layer.
-                var volumeLayer = layerType.GetField("volumeLayer", BindingFlags.Public | BindingFlags.Instance);
+                FieldInfo volumeLayer = layerType.GetField("volumeLayer", BindingFlags.Public | BindingFlags.Instance);
                 volumeLayer.SetValue(layer, volumeLayer.GetValue(templateLayer));
 
                 // call Init(resources) function on the layer.
-                var resources = layerType.GetField("m_Resources", BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo resources = layerType.GetField("m_Resources", BindingFlags.NonPublic | BindingFlags.Instance);
                 layerType.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance).Invoke(layer, new object[] { resources.GetValue(templateLayer) });
             }
         }
@@ -1342,11 +1344,11 @@ namespace CaptureTools
 
         private void BlockHighlighters(bool block)
         {
-            var parts = HighLogic.LoadedSceneIsFlight ? FlightGlobals.VesselsLoaded.SelectMany(v => v.parts) : EditorLogic.SortedShipList;
+            IEnumerable<Part> parts = HighLogic.LoadedSceneIsFlight ? FlightGlobals.VesselsLoaded.SelectMany(v => v.parts) : EditorLogic.SortedShipList;
 
             // set highlightBlocked to true via reflection.
             //var highlightBlocked = typeof(Part).GetField("highlightBlocked", BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var part in parts)
+            foreach (Part part in parts)
             {
                 //highlightBlocked.SetValue(part, block);
                 part.SetHighlight(false, false);
@@ -1387,14 +1389,14 @@ namespace CaptureTools
         {
             if (Time.unscaledDeltaTime < Mathf.Epsilon) return rot;
             // account for double-cover
-            var Dot = Quaternion.Dot(rot, target);
-            var Multi = Dot > 0f ? 1f : -1f;
+            float Dot = Quaternion.Dot(rot, target);
+            float Multi = Dot > 0f ? 1f : -1f;
             target.x *= Multi;
             target.y *= Multi;
             target.z *= Multi;
             target.w *= Multi;
             // smooth damp (nlerp approx)
-            var Result = new Vector4(
+            Vector4 Result = new Vector4(
                 Mathf.SmoothDamp(rot.x, target.x, ref deriv.x, time, maxSpeed, deltaTime),
                 Mathf.SmoothDamp(rot.y, target.y, ref deriv.y, time, maxSpeed, deltaTime),
                 Mathf.SmoothDamp(rot.z, target.z, ref deriv.z, time, maxSpeed, deltaTime),
@@ -1402,7 +1404,7 @@ namespace CaptureTools
             ).normalized;
 
             // ensure deriv is tangent
-            var derivError = Vector4.Project(new Vector4(deriv.x, deriv.y, deriv.z, deriv.w), Result);
+            Vector4 derivError = Vector4.Project(new Vector4(deriv.x, deriv.y, deriv.z, deriv.w), Result);
             deriv.x -= derivError.x;
             deriv.y -= derivError.y;
             deriv.z -= derivError.z;
@@ -1431,13 +1433,13 @@ namespace CaptureTools
             yield return null;
 
             showClapper = true;
-            
+
             // Play a loud sound for syncing.
-            var clip = GameDatabase.Instance.GetAudioClip("CaptureTools/Sounds/clapper");
+            AudioClip clip = GameDatabase.Instance.GetAudioClip("CaptureTools/Sounds/clapper");
 
             if (clip != null)
             {
-                var audioSource = gameObject.AddComponent<AudioSource>();
+                AudioSource audioSource = gameObject.AddComponent<AudioSource>();
                 audioSource.clip = clip;
                 audioSource.volume = 1f;
                 audioSource.spatialBlend = 0f;

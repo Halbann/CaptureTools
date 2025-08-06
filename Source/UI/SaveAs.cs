@@ -1,0 +1,74 @@
+﻿using System;
+using System.IO;
+using UnityEngine;
+
+namespace CaptureTools.UI
+{
+    public class SaveAs
+    {
+        public string Text => textTrimmed;
+        public bool valid = true;
+        public Func<string, bool> validity;
+        public Action<string> onSave;
+        public Action onCancel;
+        public bool complete = false;
+        
+        private string text = "";
+        private string textTrimmed;
+
+        public SaveAs(Action<string> onSave, Action onCancel, string initialText = "", Func<string, bool> validity = null)
+        {
+            text = initialText;
+            this.validity = validity;
+            this.onSave = onSave;
+            this.onCancel = onCancel;
+        }
+
+        public void Update()
+        {
+            GUILayout.BeginHorizontal();
+
+            Color guiColour = GUI.color;
+            if (!valid)
+                GUI.color = Color.red;
+
+            // Check if enter or escape were pressed.
+            bool enter = false;
+            bool escape = false;
+            var e = Event.current;
+            if (e.type == EventType.KeyDown)
+            {
+                if (e.keyCode == KeyCode.Return)
+                    enter = true;
+                else if (e.keyCode == KeyCode.Escape)
+                    escape = true;
+            }
+
+            text = GUILayout.TextField(text);
+            textTrimmed = text.Trim();
+
+            if (!valid)
+                GUI.color = guiColour;
+
+            valid = !string.IsNullOrEmpty(textTrimmed) && textTrimmed.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+            if (validity != null)
+                valid = valid && validity(textTrimmed);
+
+            GUIEnabled.Push(valid);
+            if ((enter || GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", CaptureTools.buttonStyle)))) && valid)
+            {
+                complete = true;
+                onSave?.Invoke(textTrimmed);
+            }
+            GUIEnabled.Pop();
+
+            if (escape || GUILayout.Button("Cancel", GUILayout.Width(ContentSizeCache.Size("Cancel", CaptureTools.buttonStyle))))
+            {
+                complete = true;
+                onCancel?.Invoke();
+            }
+
+            GUILayout.EndHorizontal();
+        }
+    }
+}

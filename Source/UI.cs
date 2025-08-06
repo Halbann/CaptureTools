@@ -1,8 +1,10 @@
-using CaptureTools.UI;
+﻿using CaptureTools.UI;
 using KSP.UI.Screens;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace CaptureTools
@@ -17,6 +19,11 @@ namespace CaptureTools
         private static UISection currentSection = UISection.Capture;
         private static float timingSliderSpace = 12f;
         private static float sliderWidth = 220f;
+        private static int entryHeight = 26;
+        private static int maxVisibleEntries = 5;
+        private static string presetAuthorNameColour = "grey";
+        private StringBuilder sb = new StringBuilder();
+        private static string windowTitle = $"{Meta.name} {Meta.version}";
 
         // todo: move styles into a separate static class when the UI is refactored.
         private static bool initStyles = false;
@@ -28,21 +35,22 @@ namespace CaptureTools
         private static bool showMainCameraSection = false;
         private static bool showMainSmoothingSection = false;
         private static bool showMulticamSection = false;
-        //private static bool showSoundSection = false;
-        //private static bool showAnimationSection = false;
-        //private static bool showTraceSection = false;
-        //private static bool showHDRISection = false;
-        //private static bool showExperimentalSection = false;
-        //private static bool showPhysicsSection = false;
+        private static bool showEncodingSection = false;
+        private static bool showPresetsList = false;
 
-        //private static bool addedAppLauncherButton = false;
         private ApplicationLauncherButton appLauncherButton;
         public static bool guiEnabled = false;
         private bool guiHidden = false;
         private bool loading = false;
+        private static Vector2 presetsScrollPosition;
 
         public bool showClapper = false;
         private static GUIStyle clapperStyle;
+
+        private bool registeredEvents = false;
+        private List<FFmpegPreset> presetsSorted = new List<FFmpegPreset>();
+
+        private SaveAs saveAs = null;
 
         // Sliders
         SettingSliderType captureFramerateSlider = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
@@ -68,7 +76,7 @@ namespace CaptureTools
         }
 
         public void DrawGUI() =>
-            windowRect = GUILayout.Window(windowID, windowRect, FillWindow, "Capture Tools", GUILayout.Height(1), GUILayout.Width(windowWidth));
+            windowRect = GUILayout.Window(windowID, windowRect, FillWindow, windowTitle, GUILayout.Height(1), GUILayout.Width(windowWidth));
 
         private void InitStyles()
         {
@@ -106,6 +114,25 @@ namespace CaptureTools
 
             if (GUI.Button(new Rect(windowRect.width - (18 * 2), 2, 16, 16), "\\", smallTextButtonStyle))
                 Application.OpenURL(Path.GetFullPath(FilePath));
+
+            if (GUI.Button(new Rect(windowRect.width - (18 * 3), 2, 16, 16), "?", smallTextButtonStyle))
+            {
+                string wikiURL = @"https://github.com/Halbann/CaptureTools/wiki/";
+                Dictionary<UISection, string> sectionPageMap = new Dictionary<UISection, string>
+                {
+                    { UISection.Capture, "Capture" },
+                    { UISection.Trace, "Trace" },
+                    { UISection.Physics, "Physics" },
+                    { UISection.Animation, "Animation" },
+                    { UISection.HDRI, "HDRI" }
+                    // note: no timing section.
+                };
+
+                if (sectionPageMap.TryGetValue(currentSection, out string page))
+                    wikiURL += page;
+
+                Application.OpenURL(wikiURL);
+            }
 
             if (!initStyles)
                 InitStyles();
@@ -197,13 +224,9 @@ namespace CaptureTools
             if (CaptureMain || CaptureMulti)
                 GUI.enabled = false;
 
-            SettingSlider("Quality (CRF)", ref CRF, 10, 40, 0);
             UpdateFramerateSlider(captureFramerateSlider, captureFramerate);
-            UpdateFramerateSlider(playbackFramerateSlider, playbackFramerate, ref differentPlaybackFramerate);
-
-            // todo: move out of UI?
             if (!differentPlaybackFramerate && playbackFramerate.Value != captureFramerate)
-                playbackFramerate.Value = captureFramerate;
+                playbackFramerate.Value = captureFramerate; // todo: move out of UI.
 
             // Frame of reference.
             GUILayout.BeginHorizontal();
@@ -219,6 +242,143 @@ namespace CaptureTools
             GUI.enabled = true;
 
             showPreview = GUILayout.Toggle(showPreview, "Show Preview");
+
+            if (SectionButton("Encoding", ref showEncodingSection))
+            {
+                GUILayout.BeginVertical(boxStyle);
+
+                // todo: move this out of UI.
+                if (!registeredEvents)
+                {
+                    Action onPresetsChanged = () =>
+                    {
+                        presetsSorted.Clear();
+                        presetsSorted.AddRange(FFmpegPresetLoader.presets.Values.OrderBy(p => p.Name));
+                    };
+
+                    FFmpegPresetLoader.OnPresetChanged += onPresetsChanged;
+                    onPresetsChanged();
+                    registeredEvents = true;
+                }
+
+                FFmpegPreset current = FFmpegPresetLoader.CurrentPreset;
+
+                UpdateFramerateSlider(playbackFramerateSlider, playbackFramerate, ref differentPlaybackFramerate);
+                SettingSlider("Quality (CRF)", ref CRF, 10, 40, 0);
+
+                // todo: this if statement feels dumb.
+                if (saveAs != null && !saveAs.complete)
+                {
+                    saveAs.Update();
+                }
+                else
+                {
+                    GUILayout.BeginHorizontal();
+
+                    // Name.
+                    SectionButton(current.Name, ref showPresetsList);
+
+                    GUIEnabled.Push(current != null);
+                    bool edited = current.Editable && current.Modified;
+
+                    // Save.
+                    GUIEnabled.Push(edited);
+                    if (GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", buttonStyle))) && edited)
+                        current.SaveToFile();
+                    GUIEnabled.Pop(); // End of save button.
+
+                    // Save as.
+                    if (GUILayout.Button("Save As", GUILayout.Width(ContentSizeCache.Size("Save As", buttonStyle))))
+                    {
+                        saveAs = new SaveAs(
+                            s =>
+                            {
+                                FFmpegPreset newPreset = new FFmpegPreset(s, current.Command, FFmpegPreset.defaultAuthor);
+                                if (FFmpegPresetLoader.AddPreset(newPreset))
+                                {
+                                    newPreset.SaveToFile();
+                                    FFmpegPresetLoader.SetCurrentPreset(s);
+                                }
+
+                                saveAs = null;
+                            },
+                            () => saveAs = null,
+                            current.Name,
+                            s => !FFmpegPresetLoader.presets.ContainsKey(s));
+                    }
+
+                    // Reload.
+                    bool reloadable = (current.Editable && current.Modified) || !current.Editable;
+                    GUIEnabled.Push(reloadable);
+                    if (GUILayout.Button("Reload", GUILayout.Width(ContentSizeCache.Size("Reload", buttonStyle))) && reloadable)
+                        current.LoadFromFile();
+                    GUIEnabled.Pop();
+
+                    // Delete.
+                    GUIEnabled.Push(current.Editable && presetsSorted.Count > 1);
+                    if (GUILayout.Button("Delete", GUILayout.Width(ContentSizeCache.Size("Delete", buttonStyle))) && current.Editable && presetsSorted.Count > 1)
+                    {
+                        if (presetsSorted.Contains(current))
+                        {
+                            List<FFmpegPreset> list = presetsSorted;
+                            int index = (list.IndexOf(current) - 1 + list.Count) % list.Count;
+                            FFmpegPresetLoader.SetCurrentPreset(list[index].Name);
+                        }
+
+                        current.DeleteFile();
+                    }
+                    GUIEnabled.Pop(); // End of delete button.
+
+                    GUIEnabled.Pop(); // End of all buttons.
+                    GUILayout.EndHorizontal();
+                }
+
+                if (showPresetsList)
+                {
+                    GUILayout.BeginVertical(boxStyle);
+                    presetsScrollPosition = GUILayout.BeginScrollView(presetsScrollPosition,
+                        GUILayout.Height(Mathf.Min(presetsSorted.Count * entryHeight, entryHeight * maxVisibleEntries)));
+
+                    foreach (FFmpegPreset preset in presetsSorted)
+                    {
+                        GUILayout.BeginHorizontal();
+
+                        if (GUILayout.Button(GetPresetTitle(preset)))
+                        {
+                            FFmpegPresetLoader.SetCurrentPreset(preset.Name);
+                            showPresetsList = false;
+                        }
+
+                        if (!string.IsNullOrEmpty(preset.path))
+                            if (GUILayout.Button("\\", GUILayout.Width(16)))
+                                Application.OpenURL(preset.path);
+
+                        GUILayout.EndHorizontal();
+                    }
+
+                    GUILayout.EndScrollView();
+                    GUILayout.EndVertical();
+                }
+
+                GUIEnabled.Push(current.Editable);
+                FFmpegPresetLoader.CurrentPreset.Command = GUILayout.TextArea(FFmpegPresetLoader.CurrentPreset.Command, GUILayout.ExpandHeight(true));
+                GUIEnabled.Pop();
+
+                GUILayout.BeginHorizontal();
+
+                const string ffmpegURL = @"https://www.ffmpeg.org/ffmpeg-all.html";
+                if (GUILayout.Button("Open FFmpeg Docs"))
+                    Application.OpenURL(ffmpegURL);
+
+                const string encoderBatURL = "GameData\\CaptureTools\\FFmpeg\\Windows\\getInfoAboutEncoders.bat";
+                if (GUILayout.Button("Get Encoder Info"))
+                    if (File.Exists(encoderBatURL))
+                        Application.OpenURL(encoderBatURL);
+
+                GUILayout.EndHorizontal();
+
+                GUILayout.EndVertical();
+            }
 
             if (SectionButton("Main Camera", ref showMainCameraSection))
             {
@@ -698,15 +858,21 @@ namespace CaptureTools
             float recordingTimeMinutes = Mathf.Floor(recordingTime / 60);
             float recordingTimeSeconds = recordingTime % 60;
 
-            string colour = !preview ? "red" : "white";
-            string redlight = recording ? $"<color={colour}>●</color>" : "○";
+            sb.Clear();
 
-            string recordingText = !preview ? $"<b>{recordingTimeMinutes:00}:{recordingTimeSeconds:00}</b>" : "<b>PREVIEW</b>";
-            string buttonText = recording ? recordingText : "Record";
+            if (!recording)
+                sb.Append("○ Record");
+            else
+            {
+                if (!preview)
+                    sb.Append($"<color=red>●</color> <b>{recordingTimeMinutes:00}:{recordingTimeSeconds:00}</b>");
+                else
+                    sb.Append("<color=white>●</color> <b>PREVIEW</b>");
 
-            string recordingButtonText = redlight + " " + buttonText;
+                sb.Append($" <color=grey>({Mathf.RoundToInt(timeRatio * 100)}%)</color>");
+            }
 
-            return GUILayout.Button(recordingButtonText);
+            return GUILayout.Button(sb.ToString());
         }
 
         private void DrawClapper()
@@ -734,6 +900,9 @@ namespace CaptureTools
             slider.Update(ref framerateValue, ref toggle);
             framerate.Value = RoundFramerate(framerateValue);
         }
+
+        private string GetPresetTitle(FFmpegPreset preset) =>
+            $"{preset.Name}  <color={presetAuthorNameColour}>{preset.Author}</color>";
 
         public void AddToolbarButton()
         {

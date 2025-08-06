@@ -48,6 +48,7 @@ namespace FFmpegOut
         public int CRF = 15;
         public string path = "";
         public bool drawMainUI = false;
+        public event Action OnError;
 
         #endregion
 
@@ -137,28 +138,58 @@ namespace FFmpegOut
             for (var eof = new WaitForEndOfFrame(); ;)
             {
                 yield return eof;
-                _session?.CompletePushFrames();
+
+                try
+                {
+                    _session.CompletePushFrames();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[CaptureTools]: FFmpeg session failed while waiting to sync : " + e.Message);
+                    Error();
+                    break;
+                }
             }
         }
 
-        void Update()
+        protected void Update()
         {
+            if (!enabled)
+                return;
+
             var camera = GetComponent<Camera>();
 
             // Lazy initialization
             if (_session == null)
-            {
-                // Give a newly created temporary render texture to the camera
-                // if it's set to render to a screen. Also create a blitter
-                // object to keep frames presented on the screen.
-                if (camera.targetTexture == null)
-                {
-                    _tempRT = new RenderTexture(_width, _height, 24, GetTargetFormat(camera));
-                    _tempRT.antiAliasing = GetAntiAliasingLevel(camera);
-                    camera.targetTexture = _tempRT;
-                    _blitter = Blitter.CreateInstance(camera);
-                }
+                CreateSession(camera);
 
+            try
+            {
+                UpdateSession(camera);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[CaptureTools]: FFmpeg session failed during an update: " + e.Message);
+                Error();
+                return;
+            }
+        }
+
+        private void CreateSession(Camera camera)
+        {
+            // Give a newly created temporary render texture to the camera
+            // if it's set to render to a screen. Also create a blitter
+            // object to keep frames presented on the screen.
+            if (camera.targetTexture == null)
+            {
+                _tempRT = new RenderTexture(_width, _height, 24, GetTargetFormat(camera));
+                _tempRT.antiAliasing = GetAntiAliasingLevel(camera);
+                camera.targetTexture = _tempRT;
+                _blitter = Blitter.CreateInstance(camera);
+            }
+
+            try
+            {
                 // Start an FFmpeg session.
                 _session = FFmpegSession.Create(
                     outputName,
@@ -166,13 +197,23 @@ namespace FFmpegOut
                     camera.targetTexture.height,
                     _frameRate, preset, CRF, path
                 );
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[CaptureTools]: Failed to create FFmpeg session: " + e.Message);
+                Error();
 
-                _startTime = Time.time;
-                //_startTime = Time.unscaledTime;
-                _frameCount = 0;
-                _frameDropCount = 0;
+                return;
             }
 
+            _startTime = Time.time;
+            //_startTime = Time.unscaledTime;
+            _frameCount = 0;
+            _frameDropCount = 0;
+        }
+
+        private void UpdateSession(Camera camera)
+        {
             var gap = Time.time - FrameTime;
             //var gap = Time.unscaledTime - FrameTime;
             var delta = 1 / _frameRate;
@@ -210,6 +251,13 @@ namespace FFmpegOut
                 // Compensate the time delay.
                 _frameCount += Mathf.FloorToInt(gap * _frameRate);
             }
+        }
+
+        private void Error()
+        {
+            OnError?.Invoke();
+            enabled = false;
+            Debug.LogError("[CaptureTools]: Ended camera capture due to an error.");
         }
 
         #endregion

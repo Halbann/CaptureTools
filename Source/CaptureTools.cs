@@ -1,14 +1,12 @@
+﻿using CaptureTools.Integration;
+using KSP.UI;
 using System;
 using System.Collections;
-using System.Linq;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
-
 using UnityEngine;
-
-using CaptureTools.Integration;
-using KSP.UI;
 
 namespace CaptureTools
 {
@@ -442,7 +440,7 @@ namespace CaptureTools
             //PTR calculation
 
             if (deltaTime > 0)
-                ptrRollingQ.Enqueue( deltaTime / (rtss - ptrLast) );
+                ptrRollingQ.Enqueue(deltaTime / (rtss - ptrLast));
 
             ptrLast = rtss;
 
@@ -473,9 +471,9 @@ namespace CaptureTools
 
         void HideKerbals()
         {
-            var kerbalEVAs = FindObjectsOfType<KerbalEVA>();
-            var kerbals = FindObjectsOfType<Kerbal>();
-            var renderers = FindObjectsOfType<SkinnedMeshRenderer>();
+            KerbalEVA[] kerbalEVAs = FindObjectsOfType<KerbalEVA>();
+            Kerbal[] kerbals = FindObjectsOfType<Kerbal>();
+            SkinnedMeshRenderer[] renderers = FindObjectsOfType<SkinnedMeshRenderer>();
 
 
             //foreach (Kerbal kerbal in kerbals)
@@ -488,17 +486,17 @@ namespace CaptureTools
                 kerbalEVA.bodyMesh.enabled = false;
                 kerbalEVA.helmetMesh.enabled = false;
 
-                var EVArenderers = kerbalEVA.GetComponents<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer[] EVArenderers = kerbalEVA.GetComponents<SkinnedMeshRenderer>();
 
-                var EVArenderers2 = kerbalEVA.GetComponentsInChildren<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer[] EVArenderers2 = kerbalEVA.GetComponentsInChildren<SkinnedMeshRenderer>();
 
-                var helmetObject = kerbalEVA.helmetMesh.gameObject;
-                var go = kerbalEVA.gameObject;
-                var pgo = kerbalEVA.helmetMesh.gameObject.transform.parent.gameObject;
-                var gpgo = pgo.transform.parent.gameObject;
-                var ggpgo = gpgo.transform.parent.gameObject;
+                GameObject helmetObject = kerbalEVA.helmetMesh.gameObject;
+                GameObject go = kerbalEVA.gameObject;
+                GameObject pgo = kerbalEVA.helmetMesh.gameObject.transform.parent.gameObject;
+                GameObject gpgo = pgo.transform.parent.gameObject;
+                GameObject ggpgo = gpgo.transform.parent.gameObject;
                 //kerbalEVA.gameObject.SetActive(false);
-                var head = kerbalEVA.transform.Find("head01").gameObject;
+                GameObject head = kerbalEVA.transform.Find("head01").gameObject;
             }
         }
 
@@ -532,7 +530,7 @@ namespace CaptureTools
 
                     camera.fieldOfView = Mathf.Clamp(Camera.main.fieldOfView, 5f, 90f);
 
-                    var childCameras = camera.GetComponentsInChildren<Camera>().ToList();
+                    List<Camera> childCameras = camera.GetComponentsInChildren<Camera>().ToList();
                     childCameras.ForEach(c => c.fieldOfView = camera.fieldOfView);
                 }
             }
@@ -550,7 +548,7 @@ namespace CaptureTools
                     Camera camera = EditorLogic.fetch.editorCamera;
                     camera.fieldOfView = 60f;
 
-                    var childCameras = camera.GetComponentsInChildren<Camera>().ToList();
+                    List<Camera> childCameras = camera.GetComponentsInChildren<Camera>().ToList();
                     childCameras.ForEach(c => c.fieldOfView = camera.fieldOfView);
                 }
 
@@ -582,6 +580,8 @@ namespace CaptureTools
             settings.SetValue("previewOnly", previewOnly, true);
             settings.SetValue("fullRes", fullRes, true);
             settings.SetValue("CRF", CRF, true);
+            settings.SetValue("currentPreset", FFmpegPresetLoader.CurrentPreset?.Name ?? "None", true);
+            settings.SetValue("presetAuthor", FFmpegPreset.defaultAuthor, true);
 
             // Main
             settings.SetValue("mainCaptureAudio", mainCaptureAudio, true);
@@ -650,7 +650,14 @@ namespace CaptureTools
             settings.TryGetValue("fullRes", ref fullRes);
             settings.TryGetValue("CRF", ref CRF);
 
-            // Main
+            if (!settings.TryGetValue("presetAuthor", ref FFmpegPreset.defaultAuthor))
+                FFmpegPreset.defaultAuthor = Environment.UserName;
+
+            string presetName = string.Empty;
+            if (settings.TryGetValue("currentPreset", ref presetName))
+                FFmpegPresetLoader.SetCurrentPreset(presetName);
+
+            // Main 
             settings.TryGetValue("mainCaptureAudio", ref mainCaptureAudio);
             settings.TryGetValue("audioOnly", ref audioOnly);
             //settings.TryGetValue("positionSmoothing", ref positionSmoothing);
@@ -732,21 +739,21 @@ namespace CaptureTools
         {
             try
             {
-                foreach (var assy in AssemblyLoader.loadedAssemblies)
+                foreach (AssemblyLoader.LoadedAssembly assy in AssemblyLoader.loadedAssemblies)
                 {
                     if (assy.assembly.FullName.Contains("CameraTools"))
                     {
-                        var cameraTools = assy.assembly.GetType("CameraTools.CamTools");
+                        Type cameraTools = assy.assembly.GetType("CameraTools.CamTools");
                         camToolsInstance = FindObjectOfType(cameraTools);
 
                         if (camToolsInstance != null)
                         {
                             cameraToolsLoaded = true;
 
-                            var cameraKey = cameraTools.GetField("cameraKey", BindingFlags.Public | BindingFlags.Instance);
+                            FieldInfo cameraKey = cameraTools.GetField("cameraKey", BindingFlags.Public | BindingFlags.Instance);
                             cameraToolsCameraKey = (string)cameraKey.GetValue(camToolsInstance);
 
-                            var revertKey = cameraTools.GetField("revertKey", BindingFlags.Public | BindingFlags.Instance);
+                            FieldInfo revertKey = cameraTools.GetField("revertKey", BindingFlags.Public | BindingFlags.Instance);
                             cameraToolsRevertKey = (string)revertKey.GetValue(camToolsInstance);
                         }
                     }
