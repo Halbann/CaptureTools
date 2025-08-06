@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -59,6 +60,7 @@ namespace CaptureTools
             }
 
             public static implicit operator float(Setting c) => c.constrained;
+            public static implicit operator int(Setting c) => (int)c.constrained;
         }
 
         public float TimeRatio { private set; get; }
@@ -100,6 +102,11 @@ namespace CaptureTools
             fixedDeltaTime.Apply = false;
             timeScale.Apply = false;
             captureFramerate.Apply = false;
+
+            // todo: Should remove these?
+            Time.captureFramerate = 0;
+            Time.maximumDeltaTime = GameSettings.PHYSICS_FRAME_DT_LIMIT;
+            Time.fixedDeltaTime = 0.02f;
         }
     }
 }

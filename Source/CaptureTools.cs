@@ -60,10 +60,6 @@ namespace CaptureTools
         //private float nearClipDistance = 0;
 
 
-        // Editor zoom.
-        private float lastMiddleMouseClickTime;
-        public static float editorZoomSpeed = 0.05f;
-        private bool editorZoomScrollLock = false;
 
 
         // Camera Tools integration.
@@ -197,10 +193,6 @@ namespace CaptureTools
                 //    }
                 //}
             }*/
-
-            // Editor zoom.
-
-            UpdateEditorZoom();
         }
 
         protected void OnGUI()
@@ -270,63 +262,6 @@ namespace CaptureTools
 
             if (CaptureMulti)
                 CaptureMulti = false;
-        }
-
-
-        #endregion
-
-        #region Editor Zoom
-
-        private void UpdateEditorZoom()
-        {
-            if (!HighLogic.LoadedSceneIsEditor)
-                return;
-
-            if (Input.GetKey(KeyCode.LeftAlt))
-            {
-                InputLockManager.SetControlLock(ControlTypes.CAMERACONTROLS, "CaptureToolsEditorZoom");
-                editorZoomScrollLock = true;
-
-                // Scroll zoom.
-                if (Input.GetAxis("Mouse ScrollWheel") != 0)
-                {
-                    Camera camera = EditorLogic.fetch.editorCamera;
-
-                    if (Input.GetAxis("Mouse ScrollWheel") > 0f) // forward
-                    {
-                        camera.fieldOfView *= 1 + editorZoomSpeed;
-                    }
-                    else if (Input.GetAxis("Mouse ScrollWheel") < 0f) // backwards
-                    {
-                        camera.fieldOfView *= 1 - editorZoomSpeed;
-                    }
-
-                    camera.fieldOfView = Mathf.Clamp(Camera.main.fieldOfView, 5f, 90f);
-
-                    List<Camera> childCameras = camera.GetComponentsInChildren<Camera>().ToList();
-                    childCameras.ForEach(c => c.fieldOfView = camera.fieldOfView);
-                }
-            }
-            else if (editorZoomScrollLock)
-            {
-                InputLockManager.RemoveControlLock("CaptureToolsEditorZoom");
-                editorZoomScrollLock = false;
-            }
-
-            // Double click middle mouse button to reset zoom.
-            if (Input.GetKeyDown(KeyCode.Mouse2))
-            {
-                if (Time.realtimeSinceStartup - lastMiddleMouseClickTime < 0.5f)
-                {
-                    Camera camera = EditorLogic.fetch.editorCamera;
-                    camera.fieldOfView = 60f;
-
-                    List<Camera> childCameras = camera.GetComponentsInChildren<Camera>().ToList();
-                    childCameras.ForEach(c => c.fieldOfView = camera.fieldOfView);
-                }
-
-                lastMiddleMouseClickTime = Time.realtimeSinceStartup;
-            }
         }
 
         #endregion
