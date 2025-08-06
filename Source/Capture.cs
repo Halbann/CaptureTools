@@ -17,7 +17,7 @@ namespace CaptureTools
         // Control.
 
         private bool captureMulti = false;
-        private bool CaptureMulti
+        public bool CaptureMulti
         {
             get => captureMulti;
             set
@@ -32,7 +32,7 @@ namespace CaptureTools
         }
 
         private bool captureMain = false;
-        private bool CaptureMain
+        public bool CaptureMain
         {
             get => captureMain;
             set

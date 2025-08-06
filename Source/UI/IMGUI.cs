@@ -1,6 +1,7 @@
 ﻿using CaptureTools.UI;
 using KSP.UI.Screens;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,8 +10,11 @@ using UnityEngine;
 
 namespace CaptureTools
 {
-    partial class CaptureTools
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
+    public class CaptureToolsIMGUI : MonoBehaviour
     {
+        public CaptureTools captureTools;
+
         // GUI.
         private Rect windowRect = new Rect(Screen.width * 0.05f, Screen.height * 0.1f, 0, 0);
         private static int windowWidth = 440;
@@ -26,11 +30,6 @@ namespace CaptureTools
         private static string windowTitle = $"{Meta.name} {Meta.version}";
 
         // todo: move styles into a separate static class when the UI is refactored.
-        private static bool initStyles = false;
-        internal static GUIStyle boxStyle;
-        internal static GUIStyle textBoxStyle;
-        internal static GUIStyle buttonStyle;
-        internal static GUIStyle smallTextButtonStyle;
 
         private static bool showMainCameraSection = false;
         private static bool showMainSmoothingSection = false;
@@ -44,13 +43,12 @@ namespace CaptureTools
         private bool loading = false;
         private static Vector2 presetsScrollPosition;
 
-        public bool showClapper = false;
-        private static GUIStyle clapperStyle;
-
         private bool registeredEvents = false;
         private List<FFmpegPreset> presetsSorted = new List<FFmpegPreset>();
 
         private SaveAs saveAs = null;
+
+        private Coroutine autosaveCoroutine;
 
         // Sliders
         SettingSliderType captureFramerateSlider = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
@@ -60,39 +58,6 @@ namespace CaptureTools
         SettingSliderType timescaleSlider = new SettingSliderType { name = "Time Scale", rounding = 3, useToggle = true };
         SettingSliderType maxDeltaTimeSlider = new SettingSliderType { name = "Max Delta Time", min = 0.02f, rounding = 2, useToggle = true };
         SettingSliderType fixedDeltaTimeSlider = new SettingSliderType { name = "Fixed Delta Time", min = 0.02f, rounding = 2, useToggle = true };
-
-        #region GUI
-
-        internal void OnGUI()
-        {
-            if (guiEnabled && !guiHidden && !loading)
-                DrawGUI();
-
-            DrawMulticamGUI();
-            DrawMainCamGUI();
-
-            if (CaptureMain && mainCaptureAudio && audioOnly && showClapper)
-                DrawClapper();
-        }
-
-        public void DrawGUI() =>
-            windowRect = GUILayout.Window(windowID, windowRect, FillWindow, windowTitle, GUILayout.Height(1), GUILayout.Width(windowWidth));
-
-        private void InitStyles()
-        {
-            initStyles = true;
-
-            boxStyle = GUI.skin.GetStyle("Box");
-
-            textBoxStyle = new GUIStyle(GUI.skin.textField);
-            textBoxStyle.alignment = TextAnchor.MiddleCenter;
-
-            buttonStyle = GUI.skin.button;
-
-            smallTextButtonStyle = new GUIStyle(buttonStyle);
-            smallTextButtonStyle.fontSize = 10;
-            smallTextButtonStyle.alignment = TextAnchor.MiddleRight;
-        }
 
         private enum UISection
         {
@@ -104,6 +69,51 @@ namespace CaptureTools
             HDRI,
         }
 
+        #region Mono Methods
+
+        protected void Start()
+        {
+            GameEvents.onHideUI.Add(OnHideUI);
+            GameEvents.onShowUI.Add(OnShowUI);
+            GameEvents.onGameSceneLoadRequested.Add(OnSceneRequested);
+            GameEvents.onLevelWasLoaded.Add(OnSceneLoaded);
+
+            AddToolbarButton();
+
+            windowID = GUIUtility.GetControlID(FocusType.Passive);
+
+            autosaveCoroutine = StartCoroutine(AutosaveCoroutine());
+        }
+
+        protected void Update()
+        {
+            if (!(Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(toggleUIKeycode))
+                ToggleGui();
+        }
+
+        internal void OnGUI()
+        {
+            if (guiEnabled && !guiHidden && !loading)
+            {
+                Styles.Init();
+                windowRect = GUILayout.Window(windowID, windowRect, FillWindow, windowTitle, GUILayout.Height(1), GUILayout.Width(windowWidth));
+            }
+        }
+
+        protected void OnDestroy()
+        {
+            RemoveToolbarButton();
+
+            GameEvents.onHideUI.Remove(OnHideUI);
+            GameEvents.onShowUI.Remove(OnShowUI);
+            GameEvents.onGameSceneLoadRequested.Remove(OnSceneRequested);
+            GameEvents.onLevelWasLoaded.Remove(OnSceneLoaded);
+        }
+
+        #endregion
+
+        #region FillWindow and Sections
+
         private void FillWindow(int windowID)
         {
             if (guiHidden)
@@ -112,10 +122,10 @@ namespace CaptureTools
             if (GUI.Button(new Rect(windowRect.width - 18, 2, 16, 16), ""))
                 ToggleGui();
 
-            if (GUI.Button(new Rect(windowRect.width - (18 * 2), 2, 16, 16), "\\", smallTextButtonStyle))
-                Application.OpenURL(Path.GetFullPath(FilePath));
+            if (GUI.Button(new Rect(windowRect.width - (18 * 2), 2, 16, 16), "\\", Styles.smallTextButtonStyle))
+                Application.OpenURL(Path.GetFullPath(CaptureTools.FilePath));
 
-            if (GUI.Button(new Rect(windowRect.width - (18 * 3), 2, 16, 16), "?", smallTextButtonStyle))
+            if (GUI.Button(new Rect(windowRect.width - (18 * 3), 2, 16, 16), "?", Styles.smallTextButtonStyle))
             {
                 string wikiURL = @"https://github.com/Halbann/CaptureTools/wiki/";
                 Dictionary<UISection, string> sectionPageMap = new Dictionary<UISection, string>
@@ -133,9 +143,6 @@ namespace CaptureTools
 
                 Application.OpenURL(wikiURL);
             }
-
-            if (!initStyles)
-                InitStyles();
 
             GUILayout.BeginHorizontal();
             string[] sections = Enum.GetNames(typeof(UISection));
@@ -165,87 +172,41 @@ namespace CaptureTools
                     break;
             }
 
-            // Experimental.
-
-            /*VerticalSeparator();
-            if (SectionButton("Experiments", ref showExperimentalSection))
-            {
-                GUILayout.BeginVertical(boxStyle);
-
-                // Camera.
-
-                if (nearClipDistance == 0)
-                    nearClipDistance = FlightCamera.fetch.mainCamera.nearClipPlane;
-
-                GUILayout.Label($"Camera Clipping Distance: {nearClipDistance}");
-                float prevNearClip = nearClipDistance;
-                nearClipDistance = GUILayout.HorizontalSlider(nearClipDistance, 0.0001f, 0.1f);
-                if (prevNearClip != nearClipDistance)
-                {
-                    UpdateClipDistance();
-                }
-
-                // Kerbals
-
-                if (GUILayout.Button("Hide Kerbals"))
-                {
-                    HideKerbals();
-                }
-
-                GUILayout.EndVertical();
-            }*/
-
-            // Debug
-
-            /*if (FlightGlobals.ActiveVessel != null)
-            {
-                var active = FlightGlobals.ActiveVessel;
-                GUILayout.Label($"RB Velocity: {active.rb_velocity:N1}");
-                GUILayout.Label($"Offset: {(Vector3)FloatingOrigin.Offset:N1}");
-                GUILayout.Label($"Offset Non-frame: {(Vector3)FloatingOrigin.OffsetNonKrakensbane:N1}");
-                GUILayout.Label($"Cam Velocity: {mainVelocity:N1}");
-                GUILayout.Label($"Engage: {debugKrakensbaneLatestEngage:N1}");
-                GUILayout.Label($"Disengage: {debugKrakensbaneLatestDisengage:N1}");
-            }*/
-
-
-
             GUI.DragWindow(new Rect(0, 0, 10000, 500));
 
             // Keep window inside screen space.
-            windowRect.position = new Vector2(Mathf.Clamp(windowRect.position.x, 0, Screen.width - windowRect.width),
-                               Mathf.Clamp(windowRect.position.y, 0, Screen.height - windowRect.height));
+            windowRect.position = new Vector2(Mathf.Clamp(windowRect.position.x, 0, Screen.width - windowRect.width), Mathf.Clamp(windowRect.position.y, 0, Screen.height - windowRect.height));
         }
 
         private void CaptureSection()
         {
-            GUILayout.BeginVertical(boxStyle);
+            GUILayout.BeginVertical(Styles.boxStyle);
 
-            if (CaptureMain || CaptureMulti)
+            if (captureTools.CaptureMain || captureTools.CaptureMulti)
                 GUI.enabled = false;
 
-            UpdateFramerateSlider(captureFramerateSlider, captureFramerate);
-            if (!differentPlaybackFramerate && playbackFramerate.Value != captureFramerate)
-                playbackFramerate.Value = captureFramerate; // todo: move out of UI.
+            FramerateSlider(captureFramerateSlider, CaptureTools.captureFramerate);
+            if (!CaptureTools.differentPlaybackFramerate && CaptureTools.playbackFramerate.Value != CaptureTools.captureFramerate)
+                CaptureTools.playbackFramerate.Value = CaptureTools.captureFramerate; // todo: move out of UI.
 
             // Frame of reference.
             GUILayout.BeginHorizontal();
             GUILayout.Label($"Sync: ");
             string[] syncStrings = new string[] { "Physics", "Rendering" };
-            useFixedUpdate = 0 == GUILayout.SelectionGrid(useFixedUpdate ? 0 : 1, syncStrings, 2);
+            CaptureTools.useFixedUpdate = 0 == GUILayout.SelectionGrid(CaptureTools.useFixedUpdate ? 0 : 1, syncStrings, 2);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 
-            fullRes = GUILayout.Toggle(fullRes, "Use Screen Resolution");
-            previewOnly = GUILayout.Toggle(previewOnly, "Preview Only");
+            CaptureTools.fullRes = GUILayout.Toggle(CaptureTools.fullRes, "Use Screen Resolution");
+            CaptureTools.previewOnly = GUILayout.Toggle(CaptureTools.previewOnly, "Preview Only");
 
             GUI.enabled = true;
 
-            showPreview = GUILayout.Toggle(showPreview, "Show Preview");
+            CaptureTools.showPreview = GUILayout.Toggle(CaptureTools.showPreview, "Show Preview");
 
             if (SectionButton("Encoding", ref showEncodingSection))
             {
-                GUILayout.BeginVertical(boxStyle);
+                GUILayout.BeginVertical(Styles.boxStyle);
 
                 // todo: move this out of UI.
                 if (!registeredEvents)
@@ -263,7 +224,7 @@ namespace CaptureTools
 
                 FFmpegPreset current = FFmpegPresetLoader.CurrentPreset;
 
-                UpdateFramerateSlider(playbackFramerateSlider, playbackFramerate, ref differentPlaybackFramerate);
+                FramerateSlider(playbackFramerateSlider, playbackFramerate, ref differentPlaybackFramerate);
                 SettingSlider("Quality (CRF)", ref CRF, 10, 40, 0);
 
                 // todo: this if statement feels dumb.
@@ -750,94 +711,13 @@ namespace CaptureTools
             GUILayout.EndVertical();
         }
 
-        void VerticalSeparator()
-        {
-            //GUILayout.BeginHorizontal();
-            //GUILayout.FlexibleSpace();
-            //GUI.color = Color.grey;
-            //GUILayout.Label("--------------");
-            //GUI.color = Color.white;
-            //GUILayout.FlexibleSpace();
-            //GUILayout.EndHorizontal();
-        }
+        #endregion
 
-        // todo: replace all uses of SettingSlider and remove SettingSlider.
-
-        public static float RoundFramerate(float framerate)
-        {
-            if (framerate > 30)
-                return Mathf.Round(framerate / 10) * 10;
-            else
-                return Mathf.Round(framerate);
-        }
-
-        void SettingSlider(string name, ref float setting, float min, float max, int rounding, bool softMin = false)
-        {
-            bool update = false;
-            SettingSlider(name, ref setting, min, max, rounding, ref update, softMin);
-        }
-
-        void SettingSlider(string name, ref float setting, float min, float max, int rounding, ref bool update, bool softMin = false)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(3);
-
-            if (name != "")
-                GUILayout.Label(name);
-
-            float old = setting;
-
-            // Slider
-            float sliderMin = !softMin ? min : Mathf.Min(setting, min);
-            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, sliderMin, max, GUILayout.Width(sliderWidth)), rounding);
-
-            // Box
-            string text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), textBoxStyle, GUILayout.Width(38));
-            if (float.TryParse(text, out float result))
-                setting = result;
-            else if (text == "")
-                setting = 0;
-
-            update = update || (old != setting);
-
-            GUILayout.Space(3);
-            GUILayout.EndHorizontal();
-        }
-
-        void SettingSliderToggle(string name, ref float setting, float min, float max, int rounding, ref bool toggle, bool softMin = false)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(3);
-
-            toggle = GUILayout.Toggle(toggle, "", GUILayout.Width(12));
-
-            bool guiEnabled = GUI.enabled;
-            if (!toggle)
-                GUI.enabled = false;
-
-            if (name != "")
-                GUILayout.Label(name);
-
-            // Slider
-            float sliderMin = !softMin ? min : Mathf.Min(setting, min);
-            setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, sliderMin, max, GUILayout.Width(sliderWidth)), rounding);
-
-            // Box
-            string text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), textBoxStyle, GUILayout.Width(38));
-            if (float.TryParse(text, out float result))
-                setting = result;
-            else if (text == "")
-                setting = 0;
-
-            GUI.enabled = guiEnabled;
-
-            GUILayout.Space(3);
-            GUILayout.EndHorizontal();
-        }
+        #region UI Elements
 
         private static bool SectionButton(string name, ref bool value)
         {
-            value = GUILayout.Toggle(value, name, buttonStyle);
+            value = GUILayout.Toggle(value, name, Styles.buttonStyle);
             return value;
         }
 
@@ -869,40 +749,51 @@ namespace CaptureTools
                 else
                     sb.Append("<color=white>●</color> <b>PREVIEW</b>");
 
-                sb.Append($" <color=grey>({Mathf.RoundToInt(timeRatio * 100)}%)</color>");
+                sb.Append($" <color=grey>({Mathf.RoundToInt(captureTools.timeRatio * 100)}%)</color>");
             }
 
             return GUILayout.Button(sb.ToString());
         }
 
-        private void DrawClapper()
-        {
-            if (clapperStyle == null)
-            {
-                clapperStyle = new GUIStyle(GUI.skin.label);
-                clapperStyle.fontSize = 256 * (Screen.height / 540);
-                clapperStyle.fontStyle = FontStyle.Bold;
-                clapperStyle.alignment = TextAnchor.MiddleCenter;
-            }
-
-            int offset = 5 * (Screen.height / 540);
-
-            GUI.Label(new Rect(0 + offset, 0 + offset, Screen.width, Screen.height), "<color=black>SYNC</color>", clapperStyle);
-            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "SYNC", clapperStyle);
-        }
-
-        private void UpdateFramerateSlider(SettingSliderType slider, Constrained framerate) =>
+        private void FramerateSlider(SettingSliderType slider, Constrained framerate) =>
             framerate.Value = RoundFramerate(slider.Update(framerate));
 
-        private void UpdateFramerateSlider(SettingSliderType slider, Constrained framerate, ref bool toggle)
+        private void FramerateSlider(SettingSliderType slider, Constrained framerate, ref bool toggle)
         {
             float framerateValue = framerate.Value;
             slider.Update(ref framerateValue, ref toggle);
             framerate.Value = RoundFramerate(framerateValue);
         }
 
+        #endregion
+
+        #region Utils
+
+        public static float RoundFramerate(float framerate)
+        {
+            if (framerate > 30)
+                return Mathf.Round(framerate / 10) * 10;
+            else
+                return Mathf.Round(framerate);
+        }
+
         private string GetPresetTitle(FFmpegPreset preset) =>
             $"{preset.Name}  <color={presetAuthorNameColour}>{preset.Author}</color>";
+
+        IEnumerator AutosaveCoroutine()
+        {
+            while (true)
+            {
+                if (guiEnabled)
+                    captureTools.SaveSettings();
+
+                yield return new WaitForSecondsRealtime(10f);
+            }
+        }
+
+        #endregion
+
+        #region Toolbar and Activation
 
         public void AddToolbarButton()
         {
@@ -952,7 +843,7 @@ namespace CaptureTools
         void DisableGui()
         {
             guiEnabled = false;
-            SaveSettings();
+            captureTools.SaveSettings();
         }
 
         private void OnShowUI() =>

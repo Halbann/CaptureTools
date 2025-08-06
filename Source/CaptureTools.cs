@@ -16,10 +16,11 @@ namespace CaptureTools
         #region Fields
 
         public static CaptureTools Instance;
+        public CaptureToolsIMGUI imgui;
         private bool selfDestruct = false;
 
         public static string filePath = "Captures";
-        public string FilePath
+        public static string FilePath
         {
             get
             {
@@ -41,8 +42,6 @@ namespace CaptureTools
         private static string kspRoot;
         private static string pluginDataPath;
         private static string configPath;
-        private Coroutine autosaveCoroutine;
-
 
         // Timing.
         public static float maxDeltaTime;
@@ -62,7 +61,7 @@ namespace CaptureTools
 
         private Queue<float> ptrRollingQ = new Queue<float>();
         private float ptrLast;
-        private float timeRatio;
+        public float timeRatio;
 
         private static int originalTargetFrameRate;
         private static int originalVSyncCount;
@@ -91,9 +90,13 @@ namespace CaptureTools
         private string cameraToolsCameraKey;
         private string cameraToolsRevertKey;
 
+        // Integral UI.
+        public bool showClapper = false;
+        private static GUIStyle clapperStyle;
+
         #endregion
 
-        #region Main
+        #region Mono Methods
 
         internal void Awake()
         {
@@ -123,9 +126,6 @@ namespace CaptureTools
             configPath = Path.Combine(pluginDataPath, "settings.cfg");
             LoadSettings();
 
-            autosaveCoroutine = StartCoroutine(AutosaveCoroutine());
-
-
             // Timing defaults.
 
             maxDeltaTime = Time.maximumDeltaTime;
@@ -151,18 +151,6 @@ namespace CaptureTools
 
             // Trace.
             TraceRecorder.recordedFrames = 0;
-
-
-            // UI.
-
-            GameEvents.onHideUI.Add(OnHideUI);
-            GameEvents.onShowUI.Add(OnShowUI);
-            GameEvents.onGameSceneLoadRequested.Add(OnSceneRequested);
-            GameEvents.onLevelWasLoaded.Add(OnSceneLoaded);
-
-            AddToolbarButton();
-
-            windowID = GUIUtility.GetControlID(FocusType.Passive);
         }
 
         internal void LateUpdate()
@@ -175,27 +163,11 @@ namespace CaptureTools
             if (!useFixedUpdate)
             {
                 if (CaptureMulti)
-                {
-                    //UpdateMultiCaptureFixed();
                     UpdateMultiCapture();
-                }
 
                 if (CaptureMain)
-                {
                     UpdateMainCamera();
-                }
             }
-            // Pretty sure I don't need UpdateMainCameraLate anymore.
-            /*else
-            {
-                if (CaptureMain)
-                {
-                    UpdateMainCameraLate();
-                }
-            }*/
-
-            //if (useFixedUpdate && CaptureMain)
-            //    UpdateMainCameraLate();
         }
 
         internal void FixedUpdate()
@@ -208,19 +180,6 @@ namespace CaptureTools
 
             // Not using FixedUpdate for fixed camera updates anymore. Using WaitForFixedUpdate instead.
 
-            /*if (useFixedUpdate)
-            {
-
-                if (CaptureMulti)
-                {
-                    UpdateMultiCaptureFixed();
-                    UpdateMultiCapture();
-                }
-
-                if (CaptureMain)
-                    UpdateMainCamera();
-            }*/
-
             if (capturingTrace)
                 TraceFixedUpdate();
         }
@@ -229,13 +188,6 @@ namespace CaptureTools
         {
             if (selfDestruct)
                 return;
-
-
-            // UI
-
-            if (!(Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(toggleUIKeycode))
-                ToggleGui();
-
 
             bool alt = Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr);
 
@@ -247,7 +199,7 @@ namespace CaptureTools
                 CaptureMain = !CaptureMain;
 
                 if (!guiEnabled && UIMasterController.Instance.IsUIShowing)
-                    ToggleGui();
+                    imgui.ToggleGui();
             }
 
             // Stop all capture.
@@ -258,12 +210,10 @@ namespace CaptureTools
                 CaptureMain = false;
             }
 
-
             // Timing.
 
             float rtss = Time.realtimeSinceStartup;
             UpdatePTR(rtss, Time.deltaTime);
-
 
             // Sound.
 
@@ -286,10 +236,34 @@ namespace CaptureTools
                 //}
             }*/
 
-
             // Editor zoom.
 
             UpdateEditorZoom();
+        }
+
+        protected void OnGUI()
+        {
+            DrawMulticamGUI();
+            DrawMainCamGUI();
+
+            if (CaptureMain && mainCaptureAudio && audioOnly && showClapper)
+                DrawClapper();
+        }
+
+        private void DrawClapper()
+        {
+            if (clapperStyle == null)
+            {
+                clapperStyle = new GUIStyle(GUI.skin.label);
+                clapperStyle.fontSize = 256 * (Screen.height / 540);
+                clapperStyle.fontStyle = FontStyle.Bold;
+                clapperStyle.alignment = TextAnchor.MiddleCenter;
+            }
+
+            int offset = 5 * (Screen.height / 540);
+
+            GUI.Label(new Rect(0 + offset, 0 + offset, Screen.width, Screen.height), "<color=black>SYNC</color>", clapperStyle);
+            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "SYNC", clapperStyle);
         }
 
         internal void OnDestroy()
@@ -314,8 +288,6 @@ namespace CaptureTools
             if (selfDestruct)
                 return;
 
-            RemoveToolbarButton();
-
             Time.captureFramerate = 0;
             Time.maximumDeltaTime = GameSettings.PHYSICS_FRAME_DT_LIMIT;
             Time.fixedDeltaTime = 0.02f;
@@ -338,102 +310,7 @@ namespace CaptureTools
 
             if (CaptureMulti)
                 CaptureMulti = false;
-
-            GameEvents.onHideUI.Remove(OnHideUI);
-            GameEvents.onShowUI.Remove(OnShowUI);
-            GameEvents.onGameSceneLoadRequested.Remove(OnSceneRequested);
-            GameEvents.onLevelWasLoaded.Remove(OnSceneLoaded);
         }
-
-        #endregion
-
-        #region Audio
-
-        /*void FindAudioStuff()
-        {
-            var mixers = FindObjectsOfType<AudioMixer>();
-            var groups = FindObjectsOfType<AudioMixerGroup>();
-            var sources = FindObjectsOfType<AudioSource>();
-            var listeners = FindObjectsOfType<AudioListener>();
-
-            Debug.Log(mixers);
-            Debug.Log(sources);
-            
-            //mixers.First().SetFloat("pitch", 0.5f);
-
-            var bundle = CaptureToolsAssets.bundle;
-            mixer = bundle.LoadAsset<AudioMixer>("Assets/CaptureTimePitch.mixer");
-            mixerGroup = bundle.LoadAsset<AudioMixerGroup>("Assets/CaptureTimePitch.mixer");
-            var snapshot = bundle.LoadAsset<AudioMixerSnapshot>("Assets/CaptureTimePitch.mixer");
-
-            //var mymixer = Instantiate(mixer);
-
-            foreach (var source in sources)
-            {
-                source.outputAudioMixerGroup = mixerGroup; 
-            }
-
-            mixerAdded = true;
-        }
-
-        void RemoveSoundSourceEvents()
-        {
-            GameEvents.onPartExplode.Remove(OnPartExplode);
-            GameEvents.onPartDeCouple.Remove(OnPartDeCouple);
-            GameEvents.onVesselCreate.Remove(OnVesselCreate);
-            GameEvents.onVesselLoaded.Remove(OnVesselCreate);
-            GameEvents.onStageActivate.Remove(OnStageActivate);
-            GameEvents.onStageSeparation.Remove(OnStageSeparation);
-            GameEvents.onEngineActiveChange.Remove(OnEngineActiveChange);
-        }
-
-        void AddSoundSourceEvents()
-        {
-            GameEvents.onPartExplode.Add(OnPartExplode);
-            GameEvents.onPartDeCouple.Add(OnPartDeCouple);
-            GameEvents.onVesselCreate.Add(OnVesselCreate);
-            GameEvents.onVesselLoaded.Add(OnVesselCreate);
-            GameEvents.onStageActivate.Add(OnStageActivate);
-            GameEvents.onStageSeparation.Add(OnStageSeparation);
-            GameEvents.onEngineActiveChange.Add(OnEngineActiveChange);
-        }
-
-        private void OnVesselCreate(Vessel data) =>
-            SetMixerGroup();
-
-        private void OnPartDeCouple(Part data) =>
-            SetMixerGroup();
-
-        private void OnPartExplode(GameEvents.ExplosionReaction data) =>
-            SetMixerGroup();
-
-        private void OnEngineActiveChange(ModuleEngines data) =>
-            SetMixerGroup();
-
-        private void OnStageSeparation(EventReport data) =>
-            SetMixerGroup();
-
-        private void OnStageActivate(int data) =>
-            SetMixerGroup();
-
-        void SetMixerGroup()
-        {
-            if (!mixerAdded || sourcesWaiting ) return;
-            StartCoroutine(SetMixerGroupDelayed());
-        }
-
-        IEnumerator SetMixerGroupDelayed()
-        {
-            sourcesWaiting = true;
-            yield return new WaitForEndOfFrame();
-            sourcesWaiting = false;
-
-            var sources = FindObjectsOfType<AudioSource>();
-            foreach (var source in sources)
-            {
-                source.outputAudioMixerGroup = mixerGroup; 
-            }
-        }*/
 
         private void UpdatePTR(float rtss, float deltaTime)
         {
@@ -452,51 +329,6 @@ namespace CaptureTools
             if (ptrRollingQ.Count > 0)
             {
                 timeRatio = ptrRollingQ.Average();
-            }
-        }
-
-        #endregion
-
-        #region Clipping Distance
-
-        //void UpdateClipDistance()
-        //{
-        //    foreach (var cam in FlightCamera.fetch.cameras)
-        //        cam.nearClipPlane = nearClipDistance;
-        //}
-
-        #endregion
-
-        #region Kerbals
-
-        void HideKerbals()
-        {
-            KerbalEVA[] kerbalEVAs = FindObjectsOfType<KerbalEVA>();
-            Kerbal[] kerbals = FindObjectsOfType<Kerbal>();
-            SkinnedMeshRenderer[] renderers = FindObjectsOfType<SkinnedMeshRenderer>();
-
-
-            //foreach (Kerbal kerbal in kerbals)
-            //{
-            //    kerbal.ShowHelmet(!kerbal.showHelmet);
-            //}
-
-            foreach (KerbalEVA kerbalEVA in kerbalEVAs)
-            {
-                kerbalEVA.bodyMesh.enabled = false;
-                kerbalEVA.helmetMesh.enabled = false;
-
-                SkinnedMeshRenderer[] EVArenderers = kerbalEVA.GetComponents<SkinnedMeshRenderer>();
-
-                SkinnedMeshRenderer[] EVArenderers2 = kerbalEVA.GetComponentsInChildren<SkinnedMeshRenderer>();
-
-                GameObject helmetObject = kerbalEVA.helmetMesh.gameObject;
-                GameObject go = kerbalEVA.gameObject;
-                GameObject pgo = kerbalEVA.helmetMesh.gameObject.transform.parent.gameObject;
-                GameObject gpgo = pgo.transform.parent.gameObject;
-                GameObject ggpgo = gpgo.transform.parent.gameObject;
-                //kerbalEVA.gameObject.SetActive(false);
-                GameObject head = kerbalEVA.transform.Find("head01").gameObject;
             }
         }
 
@@ -562,7 +394,7 @@ namespace CaptureTools
 
         // todo: use automatic settings system from Kessler.
 
-        void SaveSettings()
+        public void SaveSettings()
         {
             if (!Directory.Exists(pluginDataPath))
                 Directory.CreateDirectory(pluginDataPath);
@@ -624,15 +456,15 @@ namespace CaptureTools
             settings.SetValue("buildTime", buildTime, true);
 
             // UI
-            settings.SetValue("windowPosition", windowRect.position, true);
-            settings.SetValue("toggleUIKeycode", toggleUIKeycode.ToString(), true);
+            settings.SetValue("windowPosition", imgui.windowRect.position, true);
+            settings.SetValue("toggleUIKeycode", imgui.toggleUIKeycode.ToString(), true);
 
             ConfigNode file = new ConfigNode();
             file.AddNode(settings);
             file.Save(configPath);
         }
 
-        void LoadSettings()
+        public void LoadSettings()
         {
             if (!File.Exists(configPath))
                 return;
@@ -704,15 +536,15 @@ namespace CaptureTools
             settings.TryGetValue("buildTime", ref buildTime);
 
             // UI
-            Vector2 windowPosition = windowRect.position;
+            Vector2 windowPosition = imgui.windowRect.position;
             if (settings.TryGetValue("windowPosition", ref windowPosition))
-                windowRect.position = windowPosition;
+                imgui.windowRect.position = windowPosition;
 
             try
             {
-                string toggleUIKeycodeString = toggleUIKeycode.ToString();
+                string toggleUIKeycodeString = imgui.toggleUIKeycode.ToString();
                 if (settings.TryGetValue("toggleUIKeycode", ref toggleUIKeycodeString))
-                    toggleUIKeycode = (KeyCode)Enum.Parse(typeof(KeyCode), toggleUIKeycodeString);
+                    imgui.toggleUIKeycode = (KeyCode)Enum.Parse(typeof(KeyCode), toggleUIKeycodeString);
             }
             catch
             {
@@ -720,16 +552,6 @@ namespace CaptureTools
             }
         }
 
-        IEnumerator AutosaveCoroutine()
-        {
-            while (true)
-            {
-                if (guiEnabled)
-                    SaveSettings();
-
-                yield return new WaitForSecondsRealtime(10f);
-            }
-        }
 
         #endregion
 
