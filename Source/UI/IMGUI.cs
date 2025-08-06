@@ -534,56 +534,30 @@ namespace CaptureTools
 
         private void TimingSection()
         {
-            // todo: move all of the application out of UI. It definitely doesn't belong here.
+            GUILayout.BeginVertical(Styles.boxStyle);
 
-            GUILayout.BeginVertical(boxStyle);
+            Timing t = CaptureTools.timing;
 
-            // Max delta time.
-            maxDeltaTimeSlider.Update(ref maxDeltaTime, ref applyMaxDeltaTime);
-            maxDeltaTime = Mathf.Clamp(maxDeltaTime, Time.fixedDeltaTime, 1f);
+            (t.maxDeltaTime.constrained.Value, t.maxDeltaTime.Apply) = maxDeltaTimeSlider.Update(t.maxDeltaTime.constrained, t.maxDeltaTime.Apply);
+            (t.fixedDeltaTime.constrained.Value, t.fixedDeltaTime.Apply) = fixedDeltaTimeSlider.Update(t.fixedDeltaTime.constrained, t.fixedDeltaTime.Apply);
+            
+            (float framerateValue, bool apply) = captureFramerateSliderToggle.Update(t.captureFramerate.constrained.Value, t.captureFramerate.Apply);
+            t.captureFramerate.constrained.Value = RoundFramerate(framerateValue);
+            t.captureFramerate.Apply = apply;
 
-            // todo: this should not apply the default all the time that applyMaxDeltaTime is false.
-            if (applyMaxDeltaTime && Time.maximumDeltaTime != maxDeltaTime)
-                Time.maximumDeltaTime = maxDeltaTime;
-            else if (!applyMaxDeltaTime && Time.maximumDeltaTime != defaultMaxDeltaTime)
-                Time.maximumDeltaTime = defaultMaxDeltaTime;
-
-            // Fixed Delta Time.
-            fixedDeltaTimeSlider.Update(ref fixedDeltaTime, ref applyFixedDeltaTime);
-
-            // todo: likewise
-            if (applyFixedDeltaTime && Time.fixedDeltaTime != fixedDeltaTime)
-                Time.fixedDeltaTime = fixedDeltaTime;
-            else if (!applyFixedDeltaTime && Time.fixedDeltaTime != defaultFixedDeltaTime)
-                Time.fixedDeltaTime = defaultFixedDeltaTime;
-
-            // Capture framerate.
-            bool prevApplyCaptureFramerate = applyCaptureFramerate;
-            float prevCaptureFramerate = captureFramerate;
-
-            UpdateFramerateSlider(captureFramerateSliderToggle, captureFramerate, ref applyCaptureFramerate);
-
-            if (prevApplyCaptureFramerate != applyCaptureFramerate || captureFramerate != prevCaptureFramerate)
-                Time.captureFramerate = applyCaptureFramerate ? captureFramerate : defaultCaptureFramerate;
-
-            // Time Scale. todo: this is also silly.
-            timescaleSlider.Update(ref timeScale, ref applyTimescale);
-            if (applyTimescale && Time.timeScale != timeScale)
-                Time.timeScale = timeScale;
-            else if (!applyTimescale && Time.timeScale == timeScale)
-                Time.timeScale = 1f;
+            (t.timeScale.constrained.Value, t.timeScale.Apply) = timescaleSlider.Update(t.timeScale.constrained, t.timeScale.Apply);
 
             GUILayout.Label($"Physics Delta: {Math.Round(Time.fixedDeltaTime, 4)}");
             GUILayout.Label($"Frame Delta: {Math.Round(Time.deltaTime, 4)}");
             GUILayout.Label($"Time Scale: {Math.Round(Time.timeScale, 2)}");
-            GUILayout.Label($"Time Ratio: {Math.Round(timeRatio, 2)}");
+            GUILayout.Label($"Time Ratio: {Math.Round(t.TimeRatio, 2)}");
 
             GUILayout.EndVertical();
         }
 
         private void PhysicsSection()
         {
-            GUILayout.BeginVertical(boxStyle);
+            GUILayout.BeginVertical(Styles.boxStyle);
 
             /*GUILayout.BeginHorizontal();
 
@@ -598,7 +572,7 @@ namespace CaptureTools
 
             GUILayout.EndHorizontal();*/
 
-            GUILayout.BeginVertical(boxStyle);
+            GUILayout.BeginVertical(Styles.boxStyle);
             GUILayout.Label("Physics updates don't always synchronise with the framerate or camera movement. This can appear as stuttering." +
                 " Activate interpolation only if you notice stuttering, or use with Time Scale for smooth physics-locked slow motion.");
             GUILayout.EndVertical();

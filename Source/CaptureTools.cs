@@ -1,4 +1,4 @@
-﻿using CaptureTools.Integration;
+using CaptureTools.Integration;
 using CaptureTools.UI;
 using KSP.UI;
 using System;
@@ -17,6 +17,7 @@ namespace CaptureTools
 
         public static CaptureTools Instance;
         public ICaptureToolsUI ui;
+        public static Timing timing = new Timing();
         private bool selfDestruct = false;
 
         public static string filePath = "Captures";
@@ -42,26 +43,6 @@ namespace CaptureTools
         private static string kspRoot;
         private static string pluginDataPath;
         private static string configPath;
-
-        // Timing.
-        public static float maxDeltaTime;
-        private float defaultMaxDeltaTime;
-        public bool applyMaxDeltaTime;
-
-        public static float fixedDeltaTime;
-        private float defaultFixedDeltaTime;
-        public bool applyFixedDeltaTime;
-
-        public static Constrained captureFramerate = new Constrained(60, minFramerate, maxFramerate, 0);
-        private int defaultCaptureFramerate;
-        public bool applyCaptureFramerate;
-
-        public static float timeScale = 1f;
-        public bool applyTimescale;
-
-        private Queue<float> ptrRollingQ = new Queue<float>();
-        private float ptrLast;
-        public float timeRatio;
 
         private static int originalTargetFrameRate;
         private static int originalVSyncCount;
@@ -126,25 +107,8 @@ namespace CaptureTools
             configPath = Path.Combine(pluginDataPath, "settings.cfg");
             LoadSettings();
 
-            // Timing defaults.
-
-            maxDeltaTime = Time.maximumDeltaTime;
-            defaultMaxDeltaTime = Time.maximumDeltaTime;
-
-            fixedDeltaTime = Time.fixedDeltaTime;
-            defaultFixedDeltaTime = Time.fixedDeltaTime;
-
-            //captureFramerate = 30;
-            defaultCaptureFramerate = Time.captureFramerate;
-
             originalTargetFrameRate = Application.targetFrameRate;
             originalVSyncCount = QualitySettings.vSyncCount;
-
-            // Capture.
-
-            //var layers = Enumerable.Range(0, 32).Select(n => LayerMask.LayerToName(n)).ToList();
-            //Debug.Log(layers);
-
 
             CameraToolsCheck();
             BD.BDArmouryCheck();
@@ -210,10 +174,7 @@ namespace CaptureTools
                 CaptureMain = false;
             }
 
-            // Timing.
-
-            float rtss = Time.realtimeSinceStartup;
-            UpdatePTR(rtss, Time.deltaTime);
+            timing.Update();
 
             // Sound.
 
@@ -278,9 +239,7 @@ namespace CaptureTools
 
             // Timing.
 
-            applyCaptureFramerate = false;
-            applyFixedDeltaTime = false;
-            applyMaxDeltaTime = false;
+            timing.Reset();
 
 
             // Main.
@@ -312,25 +271,6 @@ namespace CaptureTools
                 CaptureMulti = false;
         }
 
-        private void UpdatePTR(float rtss, float deltaTime)
-        {
-            //PTR calculation
-
-            if (deltaTime > 0)
-                ptrRollingQ.Enqueue(deltaTime / (rtss - ptrLast));
-
-            ptrLast = rtss;
-
-            while (ptrRollingQ.Count > 60)
-            {
-                ptrRollingQ.Dequeue();
-            }
-
-            if (ptrRollingQ.Count > 0)
-            {
-                timeRatio = ptrRollingQ.Average();
-            }
-        }
 
         #endregion
 

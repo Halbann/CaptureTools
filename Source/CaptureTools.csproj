@@ -120,6 +120,7 @@
     <Compile Include="AudioRecorder\CaptureAudioUnity.cs" />
     <Compile Include="AudioRecorder\AudioInput.cs" />
     <Compile Include="AudioRecorder\AudioRecorder.cs" />
+    <Compile Include="Timing.cs" />
     <Compile Include="UI\ICaptureToolsUI.cs" />
     <Compile Include="UI\IMGUI.cs" />
     <Compile Include="ConfigNodeExtensions.cs" />
