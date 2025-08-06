@@ -3,9 +3,17 @@ using UnityEngine;
 
 namespace CaptureTools
 {
-    public class CTDebug
+    public static class CTDebug
     {
         public static bool draw = false;
+        public static void Log(string msg) =>
+            Debug.Log($"[{Meta.name}]: {msg}");
+
+        public static void LogError(string msg) =>
+            Debug.LogError($"[{Meta.name}]: {msg}");
+
+        public static void LogWarning(string msg) =>
+            Debug.LogWarning($"[{Meta.name}]: {msg}");
     }
 
     public class DrawTransform : MonoBehaviour

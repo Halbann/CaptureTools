@@ -11,9 +11,10 @@ using UnityEngine;
 namespace CaptureTools
 {
     [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
-    public class CaptureToolsIMGUI : MonoBehaviour
+    public class CaptureToolsIMGUI : MonoBehaviour, ICaptureToolsUI
     {
         public CaptureTools captureTools;
+        public bool Visible { get; set; }
 
         // GUI.
         private Rect windowRect = new Rect(Screen.width * 0.05f, Screen.height * 0.1f, 0, 0);

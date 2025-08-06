@@ -1,7 +1,7 @@
 ﻿using CaptureTools.Integration;
+using CaptureTools.UI;
 using KSP.UI;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +16,7 @@ namespace CaptureTools
         #region Fields
 
         public static CaptureTools Instance;
-        public CaptureToolsIMGUI imgui;
+        public ICaptureToolsUI ui;
         private bool selfDestruct = false;
 
         public static string filePath = "Captures";
@@ -198,8 +198,8 @@ namespace CaptureTools
 
                 CaptureMain = !CaptureMain;
 
-                if (!guiEnabled && UIMasterController.Instance.IsUIShowing)
-                    imgui.ToggleGui();
+                if (!ui.Visible && UIMasterController.Instance.IsUIShowing)
+                    ui.Visible = false;
             }
 
             // Stop all capture.
@@ -456,8 +456,8 @@ namespace CaptureTools
             settings.SetValue("buildTime", buildTime, true);
 
             // UI
-            settings.SetValue("windowPosition", imgui.windowRect.position, true);
-            settings.SetValue("toggleUIKeycode", imgui.toggleUIKeycode.ToString(), true);
+            settings.SetValue("windowPosition", ui.windowRect.position, true);
+            settings.SetValue("toggleUIKeycode", ui.toggleUIKeycode.ToString(), true);
 
             ConfigNode file = new ConfigNode();
             file.AddNode(settings);
@@ -536,15 +536,15 @@ namespace CaptureTools
             settings.TryGetValue("buildTime", ref buildTime);
 
             // UI
-            Vector2 windowPosition = imgui.windowRect.position;
+            Vector2 windowPosition = ui.windowRect.position;
             if (settings.TryGetValue("windowPosition", ref windowPosition))
-                imgui.windowRect.position = windowPosition;
+                ui.windowRect.position = windowPosition;
 
             try
             {
-                string toggleUIKeycodeString = imgui.toggleUIKeycode.ToString();
+                string toggleUIKeycodeString = ui.toggleUIKeycode.ToString();
                 if (settings.TryGetValue("toggleUIKeycode", ref toggleUIKeycodeString))
-                    imgui.toggleUIKeycode = (KeyCode)Enum.Parse(typeof(KeyCode), toggleUIKeycodeString);
+                    ui.toggleUIKeycode = (KeyCode)Enum.Parse(typeof(KeyCode), toggleUIKeycodeString);
             }
             catch
             {
