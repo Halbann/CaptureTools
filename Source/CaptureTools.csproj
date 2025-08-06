@@ -123,11 +123,14 @@
     <Compile Include="Timing.cs" />
     <Compile Include="UI\ICaptureToolsUI.cs" />
     <Compile Include="UI\IMGUI.cs" />
-    <Compile Include="ConfigNodeExtensions.cs" />
-    <Compile Include="Constrained.cs" />
+    <Compile Include="Utils\ConfigNodeExtensions.cs" />
+    <Compile Include="Utils\Constrained.cs" />
     <Compile Include="FFmpegPresets\FFmpegPreset.cs" />
     <Compile Include="FFmpegPresets\FFmpegPresetLoader.cs" />
-    <Compile Include="Debug.cs" />
+    <Compile Include="Utils\DampedFloat.cs" />
+    <Compile Include="Utils\DampedQuaternion.cs" />
+    <Compile Include="Utils\DampedVector.cs" />
+    <Compile Include="Utils\Debug.cs" />
     <Compile Include="Integration\BD.cs" />
     <Compile Include="BuildAnimation.cs" />
     <Compile Include="Capture.cs" />

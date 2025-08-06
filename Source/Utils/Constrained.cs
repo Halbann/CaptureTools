@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CaptureTools
+namespace CaptureTools.Utils
 {
     public class Constrained
     {

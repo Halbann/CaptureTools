@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace CaptureTools
+namespace CaptureTools.Utils
 {
     public static class CTDebug
     {

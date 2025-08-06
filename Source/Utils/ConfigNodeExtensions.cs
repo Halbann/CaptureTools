@@ -1,4 +1,4 @@
-﻿namespace CaptureTools
+﻿namespace CaptureTools.Utils
 {
     public static class ConfigNodeExtensions
     {
