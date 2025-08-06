@@ -12,7 +12,7 @@ https://github.com/Halbann/CaptureTools/wiki
 ## 1.4.0
 
 - Added an FFmpeg encoding preset system using config files. Works much like TUFX presets. Presets created in-game are stored in PluginData but can easily be packaged into mods. Stock presets include x264, NVENC HEVC, AV1 and more.
-- Fixed the black frame appearing at the beginning of video files.
+- Fixed the black frame that appears at the beginning of video files.
 - Fixed EVE volumetric clouds not appearing in the first frame of video files.
 - Fixed a bug where the focus of the flight camera rotating suddenly would cause the main camera to lose its orientation.
 - Fixed a bug where the atmosphere would flicker with Scatterer and Texture Replacer's real time reflections enabled.
