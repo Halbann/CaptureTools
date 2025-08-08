@@ -4,25 +4,47 @@ namespace CaptureTools.Utils
 {
     public struct DampedFloat
     {
-        public float value;
+        public float current;
         public float target;
-        public float speed;
+        public float derivative;
         public float smoothTime;
+        public float maxSpeed;
 
-        public DampedFloat(float initialValue, float targetValue, float smoothTime)
+        public DampedFloat(float initialValue, float smoothTime, float maxSpeed)
         {
-            value = initialValue;
-            target = targetValue;
-            speed = 0f;
+            current = initialValue;
+            target = initialValue;
+            derivative = 0f;
             this.smoothTime = smoothTime;
+            this.maxSpeed = maxSpeed;
         }
 
-        public float Update(float newSmoothTime = -1)
-        {
-            if (newSmoothTime != -1)
-                smoothTime = newSmoothTime;
+        public DampedFloat(float initialValue, float smoothTime)
+            : this(initialValue, smoothTime, Mathf.Infinity) { }
 
-            return value = Mathf.SmoothDamp(value, target, ref speed, smoothTime);
+        public float Update(float dt, float smoothTime = -1) =>
+            Update(current, target, dt);
+
+        public float UpdateFrom(float current, float dt, float smoothTime = -1) =>
+            Update(current, target, smoothTime, dt);
+
+        public float UpdateTo(float target, float dt, float smoothTime = -1) =>
+            Update(current, target, smoothTime, dt);
+
+        public float Update(float current, float target, float dt, float smoothTime = -1)
+        {
+            if (smoothTime != -1)
+                this.smoothTime = smoothTime;
+
+            this.target = target;
+
+            if (this.smoothTime <= 0)
+            {
+                derivative = 0;
+                return this.current = target;
+            }
+
+            return this.current = Mathf.SmoothDamp(this.current, target, ref derivative, this.smoothTime, maxSpeed, dt);
         }
     }
 }

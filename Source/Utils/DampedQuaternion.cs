@@ -7,22 +7,46 @@ namespace CaptureTools.Utils
         public Quaternion current;
         public Quaternion target;
         public Quaternion derivative;
-
         public float smoothTime;
         public float maxSpeed;
 
-        public DampedQuaternion(Quaternion initial, float smoothTime, float maxSpeed)
+        private static Quaternion zero = new Quaternion(0, 0, 0, 0);
+
+        public DampedQuaternion(Quaternion initialValue, float smoothTime, float maxSpeed)
         {
-            current = initial;
-            target = initial;
-            derivative = Quaternion.identity;
+            current = initialValue;
+            target = initialValue;
+            derivative = new Quaternion(0, 0, 0, 0);
             this.smoothTime = smoothTime;
             this.maxSpeed = maxSpeed;
         }
 
-        public Quaternion Update(Quaternion target, float dt)
+        public DampedQuaternion(Quaternion initialValue, float smoothTime)
+            : this(initialValue, smoothTime, Mathf.Infinity) { }
+
+        public Quaternion Update(float dt, float smoothTime = -1) =>
+            Update(current, target, dt, smoothTime);
+
+        public Quaternion UpdateFrom(Quaternion current, float dt, float smoothTime = -1) =>
+            Update(current, target, dt, smoothTime);
+
+        public Quaternion UpdateTo(Quaternion target, float dt, float smoothTime = -1) =>
+            Update(current, target, dt, smoothTime);
+
+        public Quaternion Update(Quaternion current, Quaternion target, float dt, float smoothTime = -1)
         {
-            return current = current.SmoothDamp(target, ref derivative, smoothTime, maxSpeed <= 0 ? float.PositiveInfinity : maxSpeed, dt);
+            if (smoothTime != -1)
+                this.smoothTime = smoothTime;
+
+            this.target = target;
+
+            if (this.smoothTime <= 0)
+            {
+                derivative = zero;
+                return this.current = target;
+            }
+
+            return this.current = current.SmoothDamp(target, ref derivative, this.smoothTime, maxSpeed, dt);
         }
     }
 
@@ -30,7 +54,11 @@ namespace CaptureTools.Utils
     {
         public static Quaternion SmoothDamp(this in Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
         {
-            if (deltaTime < Mathf.Epsilon) return rot;
+            if (deltaTime < Mathf.Epsilon)
+                return rot;
+
+            if (time < Mathf.Epsilon)
+                return target;
 
             // account for double-cover
             var Dot = Quaternion.Dot(rot, target);
