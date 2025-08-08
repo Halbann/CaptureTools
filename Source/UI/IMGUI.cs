@@ -51,10 +51,13 @@ namespace CaptureTools
 
         private Coroutine autosaveCoroutine;
 
-        // Sliders
+        // Capture.
         SettingSliderType captureFramerateSlider = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
         SettingSliderType playbackFramerateSlider = new SettingSliderType { name = "Playback Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
 
+        // Smoothing.
+
+        // Timing.
         SettingSliderType captureFramerateSliderToggle = new SettingSliderType { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
         SettingSliderType timescaleSlider = new SettingSliderType { name = "Time Scale", rounding = 3, useToggle = true };
         SettingSliderType maxDeltaTimeSlider = new SettingSliderType { name = "Max Delta Time", min = 0.02f, rounding = 2, useToggle = true };
@@ -371,6 +374,7 @@ namespace CaptureTools
 
                     GUILayout.BeginHorizontal();
                     GUILayout.Space(3);
+
                     GUILayout.Label("Resolution", GUILayout.Width(70));
 
                     string restext = GUILayout.TextField(mainHeight.ToString(), GUILayout.Width(38));
@@ -379,14 +383,10 @@ namespace CaptureTools
                     else if (restext == "")
                         mainHeight = 1080;
 
-                    //GUILayout.EndHorizontal();
-
                     GUILayout.FlexibleSpace();
 
                     // Aspect Ratio.
 
-                    //GUILayout.BeginHorizontal();
-                    //GUILayout.Label("Aspect Ratio", GUILayout.Width(70));
                     GUILayout.Label("Aspect Ratio");
                     GUILayout.Space(5);
 
@@ -407,19 +407,10 @@ namespace CaptureTools
                 }
 
                 SettingSlider("Smoothing", ref mainSmoothTime, 0, 5f, 2);
-                //SettingSlider("Smoothing Blend", ref positionSmoothing, 0f, 1f, 2);
-
-                //GUILayout.BeginHorizontal();
-                //GUILayout.FlexibleSpace();
-                //showMainSmoothingSection = GUILayout.Toggle(showMainSmoothingSection, 
-                //    "Smoothing Multipliers", buttonStyle, GUILayout.Width(140));
-                //GUILayout.FlexibleSpace();
-                //GUILayout.EndHorizontal();
 
                 showMainSmoothingSection = GUILayout.Toggle(showMainSmoothingSection,
                     "Smoothing Multipliers", buttonStyle);
 
-                //if (SectionButton("Smoothing Multipliers", ref showMainSmoothingSection))
                 if (showMainSmoothingSection)
                 {
                     GUILayout.BeginVertical(boxStyle);
@@ -431,9 +422,6 @@ namespace CaptureTools
                     GUILayout.EndVertical();
                 }
 
-                //SettingSlider("Lerp", ref mainCameraSlerp, 0.01f, 20f, 1);
-                //SettingSlider("Max Speed", ref mainMaxSpeed, 0.01f, 200f, 1);
-
                 GUILayout.EndVertical();
             }
 
@@ -444,7 +432,6 @@ namespace CaptureTools
                 {
                     GUILayout.BeginVertical(boxStyle);
 
-                    //if (RecordButton(CaptureMulti, multicamCaptureStartTime))
                     if (RecordButton(CaptureMulti, multicamCaptureStartFrame, playbackFramerate, previewOnly))
                         CaptureMulti = !CaptureMulti;
 
@@ -455,19 +442,6 @@ namespace CaptureTools
                     SettingSlider("Camera Distance", ref cameraDistance, 10, 200, 1);
                     SettingSlider("Target Delay", ref bdTargetDelay, 0, 5f, 1);
                     SettingSlider("Smoothing", ref multicamSmoothing, 0.01f, 5f, 2);
-
-                    /*var setup = multiSetups.FirstOrDefault();
-                    if (setup != null)
-                    {
-                        if (setup.vesselTarget != null)
-                            GUILayout.Label($"vesselTarget: {setup.vesselTarget.vesselName}");
-
-                        if (setup.lastBDTarget != null)
-                            GUILayout.Label($"lastBDTarget: {setup.lastBDTarget.vesselName}");
-
-                        GUILayout.Label($"lastBDTargetTime: {setup.lastBDTargetTime}");
-                        GUILayout.Label($"lastBDTargetPos: {setup.lastBDTargetPos:0}");
-                    }*/
 
                     GUILayout.EndVertical();
                 }

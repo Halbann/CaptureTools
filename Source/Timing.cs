@@ -6,18 +6,24 @@ using CaptureTools.Utils;
 
 namespace CaptureTools
 {
-    public class Timing
+    public class Timing : MonoBehaviour
     {
+        public static Timing Instance { get; private set; }
+
         // Wrapper around Unity timing controls that provides toggles, automatic limits and rounding.
         // todo: consider moving to MonoBehaviour (auto update, auto reset to defaults on destruction, but what to do about keeping values between scenes?).
+
+        public float TimeRatio { private set; get; }
+        private Queue<float> ptrRollingQ = new Queue<float>();
+        private float ptrLast;
 
         public const int minFramerate = 1;
         public const int maxFramerate = 240;
 
-        public readonly Setting maxDeltaTime = new Setting(new Constrained(Time.maximumDeltaTime, 0.02f, 0.1f), () => Time.maximumDeltaTime, v => Time.maximumDeltaTime = v);
-        public readonly Setting fixedDeltaTime = new Setting(new Constrained(Time.fixedDeltaTime, 0.02f, 0.1f), () => Time.fixedDeltaTime, v => Time.fixedDeltaTime = v);
-        public readonly Setting captureFramerate = new Setting(new Constrained(60, minFramerate, maxFramerate), () => Time.captureFramerate, v => Time.captureFramerate = (int)v);
-        public readonly Setting timeScale = new Setting(new Constrained(Time.timeScale, 0, 1), () => Time.timeScale, v => Time.timeScale = v);
+        public static readonly Setting maxDeltaTime = new Setting(new Constrained(Time.maximumDeltaTime, 0.02f, 0.1f), () => Time.maximumDeltaTime, v => Time.maximumDeltaTime = v);
+        public static readonly Setting fixedDeltaTime = new Setting(new Constrained(Time.fixedDeltaTime, 0.02f, 0.1f), () => Time.fixedDeltaTime, v => Time.fixedDeltaTime = v);
+        public static readonly Setting captureFramerate = new Setting(new Constrained(60, minFramerate, maxFramerate), () => Time.captureFramerate, v => Time.captureFramerate = (int)v);
+        public static readonly Setting timeScale = new Setting(new Constrained(Time.timeScale, 0, 1), () => Time.timeScale, v => Time.timeScale = v);
 
         public class Setting
         {
@@ -63,11 +69,19 @@ namespace CaptureTools
             public static implicit operator int(Setting c) => (int)c.constrained;
         }
 
-        public float TimeRatio { private set; get; }
-        private Queue<float> ptrRollingQ = new Queue<float>();
-        private float ptrLast;
+        protected void Awake()
+        {
+            if (Instance != null)
+            {
+                CTDebug.LogError("CaptureTools.Timing singleton already exists. Self-destructing.");
+                DestroyImmediate(this);
+                return;
+            }
 
-        public void Update()
+            Instance = this;
+        }
+
+        protected void Update()
         {
             maxDeltaTime.constrained.Value = Mathf.Clamp(maxDeltaTime, Time.fixedDeltaTime, 1f);
             maxDeltaTime.Update();
@@ -77,6 +91,16 @@ namespace CaptureTools
             timeScale.Update();
 
             UpdatePTR(Time.realtimeSinceStartup, Time.deltaTime);
+        }
+
+        protected void OnDestroy()
+        {
+            maxDeltaTime.Apply = false;
+            fixedDeltaTime.Apply = false;
+            timeScale.Apply = false;
+            captureFramerate.Apply = false;
+
+            Instance = null;
         }
 
         private void UpdatePTR(float rtss, float deltaTime)
@@ -91,22 +115,6 @@ namespace CaptureTools
 
             if (ptrRollingQ.Count > 0)
                 TimeRatio = ptrRollingQ.Average();
-        }
-
-        public void Reset()
-        {
-            ptrRollingQ.Clear();
-            ptrLast = 0;
-
-            maxDeltaTime.Apply = false;
-            fixedDeltaTime.Apply = false;
-            timeScale.Apply = false;
-            captureFramerate.Apply = false;
-
-            // todo: Should remove these?
-            Time.captureFramerate = 0;
-            Time.maximumDeltaTime = GameSettings.PHYSICS_FRAME_DT_LIMIT;
-            Time.fixedDeltaTime = 0.02f;
         }
     }
 }
