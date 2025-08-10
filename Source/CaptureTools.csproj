@@ -155,6 +155,7 @@
     <Compile Include="UI\SaveAs.cs" />
     <Compile Include="UI\SettingSlider.cs" />
     <Compile Include="UI\Styles.cs" />
+    <Compile Include="Utils\HighlightBlocker.cs" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)\GameData\CaptureTools\Plugins\$(ProjectName).dll"

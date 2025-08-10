@@ -301,7 +301,7 @@ namespace CaptureTools
             mainFOVvelocity = 0;
             lastRotation = mainCameraPivot.transform.rotation;
 
-            BlockHighlighters(true);
+            HighlightBlocker.Push();
             InitPreviewMaterial();
 
             lastVessel = FlightGlobals.ActiveVessel;
@@ -378,9 +378,7 @@ namespace CaptureTools
             mainRenderTexture = null;
 
             Destroy(mainCameraPivot);
-
-            if (!captureMulti)
-                BlockHighlighters(false);
+            HighlightBlocker.Pop();
 
             if (captureSceneIsFlight)
             {
@@ -747,7 +745,7 @@ namespace CaptureTools
             vessels.ForEach(v => SetupVessel(v));
 
             // Finish setup.
-            BlockHighlighters(true);
+            HighlightBlocker.Push();
             InitPreviewMaterial();
             MulticamCaptureStartFrame = Time.frameCount;
             Time.captureFramerate = Timing.captureFramerate;
@@ -759,19 +757,10 @@ namespace CaptureTools
 
         private void StopMultiCapture()
         {
-            //cameras.RemoveAll(c => c == null);
-            //cameras.ForEach(c => Destroy(c));
-            //cameras.Clear();
-
             renderTextures.Clear();
-
-            if (!captureMain)
-                BlockHighlighters(false);
-
+            HighlightBlocker.Pop();
             Time.captureFramerate = 0;
-
             RestoreFramerate();
-
             multiSetups.ForEach(s => s.Dispose());
             multiSetups.Clear();
         }
@@ -1342,49 +1331,6 @@ namespace CaptureTools
                 postProcessLayer.enabled = false;
             }
         }
-
-        private void BlockHighlighters(bool block)
-        {
-            IEnumerable<Part> parts = HighLogic.LoadedSceneIsFlight ? FlightGlobals.VesselsLoaded.SelectMany(v => v.parts) : EditorLogic.SortedShipList;
-
-            // set highlightBlocked to true via reflection.
-            //var highlightBlocked = typeof(Part).GetField("highlightBlocked", BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (Part part in parts)
-            {
-                //highlightBlocked.SetValue(part, block);
-                part.SetHighlight(false, false);
-            }
-
-            /*if (highlightersBlocked != block)
-            {
-                if (block)
-                {
-                    //GameEvents.onHideUI.Add(BlockHighlightersEvent);
-                    GameEvents.onShowUI.Add(BlockHighlightersEvent);
-                }
-                else
-                {
-                    //GameEvents.onHideUI.Remove(BlockHighlightersEvent);
-                    GameEvents.onShowUI.Remove(BlockHighlightersEvent);
-                }
-
-                highlightersBlocked = block;
-            }*/
-
-            GameSettings.INFLIGHT_HIGHLIGHT = !block;
-        }
-
-        /*private void BlockHighlightersEvent()
-        {
-            StartCoroutine(BlockHighlightersEventCoroutine());
-        }
-
-        private IEnumerator BlockHighlightersEventCoroutine()
-        {
-            yield return null;
-
-            BlockHighlighters(true);
-        }*/
 
         public static Quaternion SmoothDampQ(Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
         {
