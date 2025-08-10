@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
 using UnityEngine;
+using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -65,7 +65,7 @@ namespace CaptureTools
 
             if (!Directory.Exists(addonPath))
             {
-                Debug.LogError("[CaptureTools]: Failed to load addons: Addons directory not found.");
+                CTDebug.LogError("Failed to load addons: Addons directory not found.");
                 return;
             }
 
@@ -97,7 +97,7 @@ namespace CaptureTools
                 if (!File.Exists(addonPath))
                     throw new System.Exception($"{filename} not found.");
 
-                Debug.Log($"[CaptureTools]: Loading addon {filename}.");
+                CTDebug.Log($"Loading addon {filename}.");
 
                 AssemblyLoader.LoadPlugin(new FileInfo(addonPath), addonPath, null);
                 AssemblyLoader.LoadedAssembly addon = AssemblyLoader.loadedAssemblies.FirstOrDefault(p => p.name == addonName);
@@ -105,14 +105,14 @@ namespace CaptureTools
                 if (addon == null)
                     throw new System.Exception($"{filename} failed to load.");
                 else
-                    Debug.Log($"[CaptureTools]: Successfully loaded addon {filename}.");
+                    CTDebug.Log($"Successfully loaded addon {filename}.");
 
                 loadedAddons.Add(addonName);
                 addon.Load();
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[CaptureTools]: Failed to load addon: {e.Message}");
+                CTDebug.LogError($"Failed to load addon: {e.Message}");
             }
         }
     }

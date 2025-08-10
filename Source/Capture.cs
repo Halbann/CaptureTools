@@ -679,7 +679,7 @@ namespace CaptureTools
             //    UpdateMainCamera(0f);
 
             //mainCameraPivot.transform.position -= offset;
-            //Debug.Log($"[CaptureTools]: OnFloatingOriginShift - offset: {offset} - nonframe: {nonFrame}");
+            //CTDebug.Log($"OnFloatingOriginShift - offset: {offset} - nonframe: {nonFrame}");
         }
 
         /*Vector3 debugKrakensbaneLatestEngage = Vector3.zero;
@@ -687,7 +687,7 @@ namespace CaptureTools
 
         private void OnKrakensbaneEngage(Vector3d data)
         {
-            Debug.Log($"[CaptureTools]: OnKrakensbaneEngage {data}");
+            CTDebug.Log($"OnKrakensbaneEngage {data}");
 
             debugKrakensbaneLatestEngage = data;
 
@@ -697,7 +697,7 @@ namespace CaptureTools
 
         private void OnKrakensbaneDisengage(Vector3d data)
         {
-            Debug.Log($"[CaptureTools]: OnKrakensbaneDisengage {data}");
+            CTDebug.Log($"OnKrakensbaneDisengage {data}");
 
             debugKrakensbaneLatestDisengage = data;
 
@@ -707,7 +707,7 @@ namespace CaptureTools
 
         private void OnVesselSituationChange(GameEvents.HostedFromToAction<Vessel, Vessel.Situations> data)
         {
-            Debug.Log($"[CaptureTools]: OnVesselSituationChange host: {data.host} from: {data.from} to: {data.to}");
+            CTDebug.Log($"OnVesselSituationChange host: {data.host} from: {data.from} to: {data.to}");
         }*/
 
         #endregion

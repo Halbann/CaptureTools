@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEditor.Recorder;
 using UnityEngine;
+using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -42,8 +43,8 @@ namespace CaptureTools
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError("[CaptureTools]: Couldn't create audio file. Probably permissions related.");
-                        Debug.LogError(e);
+                        CTDebug.LogError("Couldn't create audio file. Probably permissions related.");
+                        CTDebug.LogError(e.ToString());
                     }
                 }
                 else

@@ -585,7 +585,7 @@ namespace CaptureTools.UI
                 else
                     rbs.ToList().ForEach(rb => rb.interpolation = RigidbodyInterpolation.None);
 
-                Debug.Log($"[CaptureTools]: Set interpolation of all Rigidbodies to {rbs[0].interpolation}.");
+                CTDebug.Log($"Set interpolation of all Rigidbodies to {rbs[0].interpolation}.");
             }
 
             GUILayout.EndVertical();

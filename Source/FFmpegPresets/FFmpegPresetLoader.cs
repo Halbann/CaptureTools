@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -44,7 +45,7 @@ namespace CaptureTools
         {
             if (presets.ContainsKey(preset.Name))
             {
-                Debug.LogError("[CaptureTools]: Already loaded a preset with the name: " + preset.Name + ". Please check your configurations and remove any duplicates. Only the first configuration parsed for any one name will be loaded.");
+                CTDebug.LogError($"Already loaded a preset with the name: {preset.Name}. Please check your configurations and remove any duplicates. Only the first configuration parsed for any one name will be loaded.");
                 return false;
             }
 
@@ -107,14 +108,14 @@ namespace CaptureTools
         {
             if (string.IsNullOrEmpty(presetName))
             {
-                Debug.LogWarning("[CaptureTools]: Attempted to set current preset with an empty name.");
+                CTDebug.LogWarning($"Attempted to set current preset with an empty name.");
                 return;
             }
 
             if (presets.ContainsKey(presetName))
                 currentPresetName = presetName;
             else
-                Debug.LogError("[CaptureTools]: Failed to set current preset. Preset with name '" + presetName + "' does not exist.");
+                CTDebug.LogError("Failed to set current preset. Preset with name '" + presetName + "' does not exist.");
         }
 
         /*public static bool DuplicatePreset(string presetName, out string newName)
@@ -123,7 +124,7 @@ namespace CaptureTools
 
             if (string.IsNullOrEmpty(presetName))
             {
-                Debug.LogWarning("[CaptureTools]: Attempted to duplicate a preset with an empty name.");
+                CTDebug.LogWarning($"Attempted to duplicate a preset with an empty name.");
                 return false;
             }
 
@@ -142,7 +143,7 @@ namespace CaptureTools
             }
             else
             {
-                Debug.LogError("[CaptureTools]: Failed to duplicate preset. Preset with name '" + presetName + "' does not exist.");
+                CTDebug.LogError("Failed to duplicate preset. Preset with name '" + presetName + "' does not exist.");
                 return false;
             }
         }*/

@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections;
-
 using UnityEngine;
 using KSP.UI;
+using CaptureTools.Utils;
 
 namespace FFmpegOut
 {
@@ -145,7 +145,7 @@ namespace FFmpegOut
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("[CaptureTools]: FFmpeg session failed while waiting to sync : " + e.Message);
+                    CTDebug.LogError("FFmpeg session failed while waiting to sync : " + e.Message);
                     Error();
                     break;
                 }
@@ -169,7 +169,7 @@ namespace FFmpegOut
             }
             catch (Exception e)
             {
-                Debug.LogError("[CaptureTools]: FFmpeg session failed during an update: " + e.Message);
+                CTDebug.LogError("FFmpeg session failed during an update: " + e.Message);
                 Error();
                 return;
             }
@@ -200,7 +200,7 @@ namespace FFmpegOut
             }
             catch (Exception e)
             {
-                Debug.LogError("[CaptureTools]: Failed to create FFmpeg session: " + e.Message);
+                CTDebug.LogError("Failed to create FFmpeg session: " + e.Message);
                 Error();
 
                 return;
@@ -257,7 +257,7 @@ namespace FFmpegOut
         {
             OnError?.Invoke();
             enabled = false;
-            Debug.LogError("[CaptureTools]: Ended camera capture due to an error.");
+            CTDebug.LogError("Ended camera capture due to an error.");
         }
 
         #endregion

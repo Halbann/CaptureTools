@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CaptureTools.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -106,7 +107,7 @@ namespace CaptureTools
                 TryLoadPresetFromFile(this, path);
             else
             {
-                UnityEngine.Debug.LogError("[CaptureTools]: Attempted to reload a preset without a config or path. Cannot reload.");
+                CTDebug.LogError("Attempted to reload a preset without a config or path. Cannot reload.");
                 return;
             }
 
@@ -145,7 +146,7 @@ namespace CaptureTools
             }
             catch (Exception e)
             {
-                UnityEngine.Debug.LogError($"[CaptureTools]: Error while loading FFmpeg preset from plugin data in {file}: {e.Message}");
+                CTDebug.LogError($"Error while loading FFmpeg preset from plugin data in {file}: {e.Message}");
                 return false;
             }
         }
@@ -163,7 +164,7 @@ namespace CaptureTools
             }
             catch (Exception e)
             {
-                UnityEngine.Debug.LogError($"[CaptureTools]: Error while loading FFmpeg preset from config in {urlConfig.url}: {e.Message}");
+                CTDebug.LogError($"Error while loading FFmpeg preset from config in {urlConfig.url}: {e.Message}");
                 return false;
             }
         }
@@ -172,13 +173,13 @@ namespace CaptureTools
         {
             if (config != null || !Editable)
             {
-                UnityEngine.Debug.LogError("[CaptureTools]: Attempted to delete a preset that is not editable or loaded from a URL config. Cannot delete.");
+                CTDebug.LogError("Attempted to delete a preset that is not editable or loaded from a URL config. Cannot delete.");
                 return;
             }
 
             if (string.IsNullOrEmpty(path))
             {
-                UnityEngine.Debug.LogError("[CaptureTools]: Attempted to delete a preset without a path. Cannot delete.");
+                CTDebug.LogError("Attempted to delete a preset without a path. Cannot delete.");
                 return;
             }
 
@@ -187,11 +188,11 @@ namespace CaptureTools
             {
                 File.Delete(path);
                 FFmpegPresetLoader.RemovePreset(this);
-                UnityEngine.Debug.Log($"[CaptureTools]: Deleted FFmpeg preset file at {path}.");
+                CTDebug.Log($"Deleted FFmpeg preset file at {path}.");
             }
             else
             {
-                UnityEngine.Debug.LogError($"[CaptureTools]: Attempted to delete a preset file that does not exist at {path}.");
+                CTDebug.LogError($"Attempted to delete a preset file that does not exist at {path}.");
             }
         }
 

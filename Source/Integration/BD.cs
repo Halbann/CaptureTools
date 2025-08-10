@@ -4,6 +4,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CaptureTools.Utils;
 
 namespace CaptureTools.Integration
 {
@@ -37,7 +38,7 @@ namespace CaptureTools.Integration
             }
             catch (Exception e)
             {
-                Debug.LogError($"[CaptureTools]: Failed to setup BD integration: {e.Message}");
+                CTDebug.LogError($"Failed to setup BD integration: {e.Message}");
             }
         }
 

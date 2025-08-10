@@ -43,6 +43,6 @@ namespace CaptureTools
     public static class Meta
     {
         public const string name = "Capture Tools";
-        public const string version = "1.4.0-test.1";
+        public const string version = "1.4.0-test.2";
     }
 }

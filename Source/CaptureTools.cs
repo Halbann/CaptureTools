@@ -143,7 +143,7 @@ namespace CaptureTools
             // Start main capture keybind.
             if ((Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(RecordingKeycode))
             {
-                Debug.Log("[CaptureTools]: Pressed record button");
+                CTDebug.Log("Pressed record button");
 
                 CaptureMain = !CaptureMain;
 
@@ -416,7 +416,7 @@ namespace CaptureTools
             }
             catch (Exception e)
             {
-                Debug.LogError($"[CaptureTools]: Failed to get Camera Tools keybinds: {e.Message}");
+                CTDebug.LogError($"Failed to get Camera Tools keybinds: {e.Message}");
             }
         }
 

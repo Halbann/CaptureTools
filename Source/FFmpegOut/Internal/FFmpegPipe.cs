@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Unity.Collections;
-using Debug = UnityEngine.Debug;
+using CaptureTools.Utils;
 
 namespace FFmpegOut
 {
@@ -27,7 +27,7 @@ namespace FFmpegOut
 
         public FFmpegPipe(string arguments)
         {
-            Debug.Log("[CaptureTools]: Creating new FFmpeg pipe. Arguments: " + arguments);
+            CTDebug.Log("Creating new FFmpeg pipe. Arguments: " + arguments);
 
             // Start FFmpeg subprocess.
             _subprocess = Process.Start(new ProcessStartInfo
@@ -68,11 +68,11 @@ namespace FFmpegOut
 
                 if (!errorKeywords.Any(k => error.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0))
                 {
-                    Debug.Log("[Capture Tools]: FFmpeg output: " + error);
+                    CTDebug.Log("FFmpeg output: " + error);
                     continue;
                 }
 
-                Debug.LogError("[Capture Tools]: FFmpeg error detected: " + error);
+                CTDebug.LogError("FFmpeg error detected: " + error);
 
                 throw new Exception("Encountered an error in the FFmpeg subprocess. " +
                                     "Please check the log for details.");
