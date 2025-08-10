@@ -1,115 +1,30 @@
-﻿using System;
+﻿using CaptureTools.Utils;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-
+using System.Linq;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
-using UnityEngine;
 
 namespace CaptureTools
 {
-    partial class CaptureTools
+    public static class HDRI
     {
         // HDRI
-        public static float HDRIWidthPower = 11;
-        public static int HDRIWidth = 2048;
-        public static float HDRISunBrightness = 200;
-        public static bool HDRIHideKerbalsInEditor = true;
+        public static float widthPower = 11;
+        public static int width = 2048;
+        public static float sunBrightness = 200;
+        public static bool hideKerbalsInEditor = true;
+        public static void CaptureHDRI() => CaptureHDRI(width, sunBrightness, hideKerbalsInEditor);
 
-        #region Equirectangular
-
-        /*void CaptureTexture(Camera cam = null, bool clear = false)
-        {
-            // Render camera to texture2D.
-
-            int width = Screen.width;
-            int height = Screen.height;
-
-            RenderTexture renderTexture = new RenderTexture(width, height, 24, DefaultFormat.HDR);
-
-            if (cam == null)
-            {
-                foreach (string cameraName in cameraNames)
-                {
-                    cam = Camera.allCameras.FirstOrDefault(c => c.name == cameraName);
-                    var targetTexture = cam.targetTexture;
-                    cam.targetTexture = renderTexture;
-                    cam.Render();
-                    cam.targetTexture = targetTexture;
-                }
-            }
-            else
-            {
-                var clearFlags = cam.clearFlags;
-                var backgroundColor = cam.backgroundColor;
-
-                if (clear)
-                {
-                    cam.clearFlags = CameraClearFlags.SolidColor;
-                    cam.backgroundColor = new Color(0, 0, 0, 1);
-                }
-
-                var targetTexture = cam.targetTexture;
-                cam.targetTexture = renderTexture;
-                cam.Render();
-                cam.targetTexture = targetTexture;
-
-                cam.clearFlags = clearFlags;
-                cam.backgroundColor = backgroundColor;
-            }
-
-            RenderTexture.active = renderTexture;
-
-            Texture2D tex = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
-            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            tex.Apply();
-
-            // discard alhpa
-
-            var pixels = tex.GetPixels();
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                pixels[i].a = 1;
-            }
-            tex.SetPixels(pixels);
-            tex.Apply();
-
-            // Save texture2D to file.
-            var imageBytes = new NativeArray<byte>(tex.GetRawTextureData(), Allocator.Temp);
-            var bytes = ImageConversion.EncodeNativeArrayToEXR(imageBytes, tex.graphicsFormat, (uint)tex.width, (uint)tex.height).ToArray();
-            
-            string name = DateTime.Now.ToString("yyyy MMdd HHmmss") + cam.name;
-            name = name.Replace(" ", "_");
-            File.WriteAllBytes(Path.Combine(pluginDataPath, name + "_HDRI.exr"), bytes);
-
-            // Cleanup.
-            RenderTexture.active = null;
-            renderTexture.Release();
-            Destroy(tex);
-
-            Debug.Log("HDRI saved to " + Path.Combine(pluginDataPath, name + "_HDRI.exr"));
-        }*/
-
-        /////////////////////////////////////////////////////
-
-        public void CaptureHDRI() =>
-            Instance.CaptureHDRI(HDRIWidth, HDRISunBrightness, HDRIHideKerbalsInEditor);
-
-        public void CaptureHDRI(int width, float sunBrightness = 200, bool hideKerbalsInEditor = false, bool disablePostProcessing = true)
+        public static void CaptureHDRI(int width, float sunBrightness = 200, bool hideKerbalsInEditor = false, bool disablePostProcessing = true)
         {
             Color sunColourOriginal = GetSunColour();
-            SetSunColour(new Color(sunBrightness, sunBrightness, sunBrightness, 1));
+            HDRI.SetSunColour(new Color(sunBrightness, sunBrightness, sunBrightness, 1));
 
             int[] faceMasks = new int[] { 32, 16, 8, 4, 2, 1 };
-
-            //List<int> faceMasksFiltered = new List<int>();
-            //for (int i = 0; i < faceMasks.Length; i++)
-            //{
-            //    if ((faceMaskSelection & faceMasks[i]) == faceMasks[i])
-            //        faceMasksFiltered.Add(faceMasks[i]);
-            //}
 
             RenderTexture cubemap = new RenderTexture(width, width, 24, DefaultFormat.HDR);
             cubemap.dimension = TextureDimension.Cube;
@@ -118,21 +33,21 @@ namespace CaptureTools
             // RenderToCubemap will draw on top of itself from each perspective
             // unless we render each face individually.
 
-            var scene = HighLogic.LoadedScene;
+            GameScenes scene = HighLogic.LoadedScene;
             if (scene == GameScenes.FLIGHT || scene == GameScenes.SPACECENTER)
             {
-                List<Camera> flightCameras = cameraNames.Select(n => Camera.allCameras.FirstOrDefault(c => c.name == n)).ToList();
+                List<Camera> flightCameras = CaptureTools.cameraNames.Select(n => Camera.allCameras.FirstOrDefault(c => c.name == n)).ToList();
 
                 if (flightCameras.Count < 1)
                 {
-                    Debug.Log("[CaptureTools]: Attmepting to take an HDRI but there are no cameras.");
+                    CTDebug.LogWarning("Attempting to take an HDRI but there are no cameras.");
                     cubemap.Release();
                     return;
                 }
 
-                bool postProcessingEnabled = GetCameraPostProcessEnabled(flightCameras.Last());
+                bool postProcessingEnabled = CaptureTools.GetCameraPostProcessEnabled(flightCameras.Last());
                 if (disablePostProcessing)
-                    flightCameras.ForEach(c => ToggleCameraPostProcess(c, false));
+                    flightCameras.ForEach(c => CaptureTools.ToggleCameraPostProcess(c, false));
 
                 // Render each face.
                 foreach (int faceMask in faceMasks)
@@ -140,14 +55,14 @@ namespace CaptureTools
                     // Render each camera to each face.
                     foreach (Camera flightCam in flightCameras)
                     {
-                        var allowHDR = flightCam.allowHDR;
-                        var allowMSAA = flightCam.allowMSAA;
+                        bool allowHDR = flightCam.allowHDR;
+                        bool allowMSAA = flightCam.allowMSAA;
 
                         flightCam.allowHDR = true;
                         flightCam.allowMSAA = true;
 
                         if (disablePostProcessing)
-                            ToggleCameraPostProcess(flightCam, false);
+                            CaptureTools.ToggleCameraPostProcess(flightCam, false);
 
                         flightCam.RenderToCubemap(cubemap, faceMask);
 
@@ -157,19 +72,19 @@ namespace CaptureTools
                 }
 
                 if (disablePostProcessing)
-                    flightCameras.ForEach(c => ToggleCameraPostProcess(c, postProcessingEnabled));
+                    flightCameras.ForEach(c => CaptureTools.ToggleCameraPostProcess(c, postProcessingEnabled));
             }
             else
             {
+                // todo: why not use editor camera?
+
                 Camera main = Camera.main;
 
-                Camera cam;
                 GameObject camObject = new GameObject("CaptureTools HDRI Camera");
-
                 camObject.transform.position = main.transform.position;
                 camObject.transform.rotation = main.transform.rotation;
 
-                cam = camObject.AddComponent<Camera>();
+                Camera cam = camObject.AddComponent<Camera>();
                 cam.allowMSAA = true;
                 cam.allowHDR = true;
                 cam.depth = -99;
@@ -180,15 +95,18 @@ namespace CaptureTools
                 // Render all faces.
                 cam.RenderToCubemap(cubemap, 63);
 
-                Destroy(camObject);
+                UnityEngine.Object.Destroy(camObject);
             }
 
             // Convert to equirect.
+            // todo: get temp RT or discard this step?
             RenderTexture combined = new RenderTexture(width * 2, width, 24, DefaultFormat.HDR);
             cubemap.ConvertToEquirect(combined, Camera.MonoOrStereoscopicEye.Mono);
             cubemap.Release();
 
             // Transfer from render texture to texture2D.
+            // todo: why make a texture with alpha? can alpha not be discarded automatically?
+
             RenderTexture.active = combined;
             Texture2D tex = new Texture2D(width * 2, width, TextureFormat.RGBAFloat, false);
             tex.ReadPixels(new Rect(0, 0, width * 2, width), 0, 0);
@@ -197,33 +115,27 @@ namespace CaptureTools
             combined.Release();
 
             // Discard alpha.
-            var pixels = tex.GetPixels();
+            Color[] pixels = tex.GetPixels();
             for (int i = 0; i < pixels.Length; i++)
-            {
                 pixels[i].a = 1;
-            }
+
             tex.SetPixels(pixels);
             tex.Apply();
 
-
-
             // Save texture2D to file.
-            var imageBytes = new NativeArray<byte>(tex.GetRawTextureData(), Allocator.Temp);
+            NativeArray<byte> imageBytes = new NativeArray<byte>(tex.GetRawTextureData(), Allocator.Temp);
             byte[] bytes;
 
             try
             {
-                bytes = ImageConversion.EncodeNativeArrayToEXR(
-                imageBytes,
-                tex.graphicsFormat,
-                (uint)tex.width,
-                (uint)tex.height,
-                0,
-                Texture2D.EXRFlags.CompressZIP).ToArray();
+                // todo: make sure that texture is being copied from GPU once and never copied back.
+
+                bytes = ImageConversion.EncodeNativeArrayToEXR(imageBytes, tex.graphicsFormat,
+                    (uint)tex.width, (uint)tex.height, 0, Texture2D.EXRFlags.CompressZIP).ToArray();
 
                 string name = DateTime.Now.ToString("yyyyMMddHHmmss") + "_CT_HDRI.exr";
 
-                string path = Path.GetFullPath(Path.Combine(FilePath, "HDRIs"));
+                string path = Path.GetFullPath(Path.Combine(CaptureTools.FilePath, "HDRIs"));
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
 
@@ -231,19 +143,15 @@ namespace CaptureTools
             }
             catch
             {
-                Debug.LogError("[CaptureTools]: Could not save HDRI. Try reducing the size.");
+                CTDebug.LogError("Could not save HDRI. Try reducing the size.");
             }
 
             imageBytes.Dispose();
             bytes = null;
 
-            //string pizname = DateTime.Now.ToString("yyyyMMddHHmmss") + "_CT_HDRI_PIZ.exr";
-            //File.WriteAllBytes(Path.Combine(pluginDataPath, pizname), PIZ);
-
             // Restore sun.
             SetSunColour(sunColourOriginal);
-
-            DestroyImmediate(tex);
+            UnityEngine.Object.DestroyImmediate(tex);
         }
 
         public static void SetSunColour(Color colour)
@@ -252,9 +160,9 @@ namespace CaptureTools
             {
                 ScaledSun.Instance.gameObject.GetComponent<MeshRenderer>().material.SetColor("_RimColor", colour);
             }
-            catch (Exception)
+            catch
             {
-                Debug.Log("[CaptureTools]: Could not set sun brightness.");
+                CTDebug.LogError("Could not set sun brightness.");
             }
         }
 
@@ -279,12 +187,11 @@ namespace CaptureTools
             {
                 string sph = "SPHmodern/SPH_interior_modern/SPH_Interior_Geometry/model_sph_interior_main_v16";
                 material = GameObject.Find(sph).GetComponent<MeshRenderer>().materials[2];
-                illum = material.GetTexture("_Illum") as Texture;
-                //illum = material.GetTexture("_MainTex") as Texture;
+                illum = material.GetTexture("_Illum");
             }
             catch
             {
-                Debug.Log("[CaptureTools]: Couldn't find SPH materials while trying to set lighting.");
+                CTDebug.LogError("Couldn't find SPH materials while trying to set lighting.");
                 return;
             }
 
@@ -337,7 +244,5 @@ namespace CaptureTools
 
             return myTexture2D;
         }
-
-        #endregion
     }
 }

@@ -634,24 +634,22 @@ namespace CaptureTools.UI
             GUILayout.BeginHorizontal();
             GUILayout.Space(3);
             GUILayout.Label("Size", GUILayout.Width(70));
-
-            // Slider
-            CaptureTools.HDRIWidthPower = Mathf.RoundToInt(Mathf.Log(CaptureTools.HDRIWidth, 2));
-            CaptureTools.HDRIWidthPower = Mathf.RoundToInt(GUILayout.HorizontalSlider(CaptureTools.HDRIWidthPower, 8, 12f));
-            CaptureTools.HDRIWidth = Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(Mathf.Pow(2f, CaptureTools.HDRIWidthPower)));
+            HDRI.widthPower = Mathf.RoundToInt(Mathf.Log(HDRI.width, 2));
+            HDRI.widthPower = Mathf.RoundToInt(GUILayout.HorizontalSlider(HDRI.widthPower, 8, 12f));
+            HDRI.width = Mathf.ClosestPowerOfTwo(Mathf.RoundToInt(Mathf.Pow(2f, HDRI.widthPower)));
 
             // Box
-            string text = GUILayout.TextField(CaptureTools.HDRIWidth.ToString(), Styles.textBoxStyle, GUILayout.Width(38));
+            string text = GUILayout.TextField(HDRI.width.ToString(), Styles.textBoxStyle, GUILayout.Width(38));
             if (int.TryParse(text, out int result))
-                CaptureTools.HDRIWidth = result;
+                HDRI.width = result;
             else if (text == "")
-                CaptureTools.HDRIWidth = 2048;
+                HDRI.width = 2048;
 
             GUILayout.Space(3);
             GUILayout.EndHorizontal();
 
-            sunBrightnessSlider.Update(ref CaptureTools.HDRISunBrightness);
-            CaptureTools.HDRIHideKerbalsInEditor = GUILayout.Toggle(CaptureTools.HDRIHideKerbalsInEditor, "Hide Kerbals in Editor");
+            sunBrightnessSlider.Update(ref HDRI.sunBrightness);
+            HDRI.hideKerbalsInEditor = GUILayout.Toggle(HDRI.hideKerbalsInEditor, "Hide Kerbals in Editor");
 
             // Capture HDRI.
 

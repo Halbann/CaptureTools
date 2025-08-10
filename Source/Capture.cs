@@ -50,7 +50,7 @@ namespace CaptureTools
 
         // Shared.
 
-        private static readonly List<string> cameraNames = new List<string> { "GalaxyCamera", "Camera ScaledSpace", "Camera 00" };
+        public static readonly List<string> cameraNames = new List<string> { "GalaxyCamera", "Camera ScaledSpace", "Camera 00" };
         private Material renderTextureMaterial;
 
         public const int minFramerate = 1;
@@ -1317,13 +1317,13 @@ namespace CaptureTools
             }
         }
 
-        private static bool GetCameraPostProcessEnabled(Camera cam)
+        public static bool GetCameraPostProcessEnabled(Camera cam)
         {
             Behaviour postProcessLayer = cam.gameObject.GetComponent("PostProcessLayer") as Behaviour;
             return postProcessLayer != null && postProcessLayer.enabled;
         }
 
-        private static void ToggleCameraPostProcess(Camera cam, bool enabled)
+        public static void ToggleCameraPostProcess(Camera cam, bool enabled)
         {
             Behaviour postProcessLayer = cam.gameObject.GetComponent("PostProcessLayer") as Behaviour;
             if (postProcessLayer != null)

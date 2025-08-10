@@ -274,9 +274,9 @@ namespace CaptureTools
             settings.SetValue("traceFrameOfReference", traceFrameOfReference.ToString(), true);
 
             // HDRI
-            settings.SetValue("HDRIWidth", HDRIWidth, true);
-            settings.SetValue("HDRISunBrightness", HDRISunBrightness, true);
-            settings.SetValue("HDRIHideKerbalsInEditor", HDRIHideKerbalsInEditor, true);
+            settings.SetValue("HDRIWidth", HDRI.width, true);
+            settings.SetValue("HDRISunBrightness", HDRI.sunBrightness, true);
+            settings.SetValue("HDRIHideKerbalsInEditor", HDRI.hideKerbalsInEditor, true);
 
             // Build animation.
             settings.SetValue("buildPartSpeed", buildPartSpeed, true);
@@ -351,9 +351,9 @@ namespace CaptureTools
                 traceFrameOfReference = (TraceFrame)Enum.Parse(typeof(TraceFrame), traceFrameStr);
 
             // HDRI
-            settings.TryGetValue("HDRIWidth", ref HDRIWidth);
-            settings.TryGetValue("HDRISunBrightness", ref HDRISunBrightness);
-            settings.TryGetValue("HDRIHideKerbalsInEditor", ref HDRIHideKerbalsInEditor);
+            settings.TryGetValue("HDRIWidth", ref HDRI.width);
+            settings.TryGetValue("HDRISunBrightness", ref HDRI.sunBrightness);
+            settings.TryGetValue("HDRIHideKerbalsInEditor", ref HDRI.hideKerbalsInEditor);
 
             // Build Animation
             settings.TryGetValue("buildPartSpeed", ref buildPartSpeed);

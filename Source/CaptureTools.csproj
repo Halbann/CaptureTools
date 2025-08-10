@@ -121,6 +121,7 @@
     <Compile Include="AudioRecorder\AudioInput.cs" />
     <Compile Include="AudioRecorder\AudioRecorder.cs" />
     <Compile Include="EditorZoom.cs" />
+    <Compile Include="HDRI.cs" />
     <Compile Include="Timing.cs" />
     <Compile Include="UI\ICaptureToolsUI.cs" />
     <Compile Include="UI\IMGUI.cs" />
@@ -137,7 +138,6 @@
     <Compile Include="Capture.cs" />
     <Compile Include="CaptureTools.cs" />
     <Compile Include="Assets.cs" />
-    <Compile Include="Equirectangular.cs" />
     <Compile Include="FFmpegOut\AssemblyInfo.cs" />
     <Compile Include="FFmpegOut\AssetLoader.cs" />
     <Compile Include="FFmpegOut\CameraCapture.cs" />
