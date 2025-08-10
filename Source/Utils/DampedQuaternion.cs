@@ -46,6 +46,9 @@ namespace CaptureTools.Utils
                 return this.current = target;
             }
 
+            //if (current != this.current)
+            //    derivative += (current - this.current) / dt;
+
             return this.current = current.SmoothDamp(target, ref derivative, this.smoothTime, maxSpeed, dt);
         }
     }
