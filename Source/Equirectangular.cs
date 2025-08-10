@@ -13,10 +13,10 @@ namespace CaptureTools
     partial class CaptureTools
     {
         // HDRI
-        private static float HDRIWidthPower = 11;
-        private static int HDRIWidth = 2048;
-        private static float HDRISunBrightness = 200;
-        private static bool HDRIHideKerbalsInEditor = true;
+        public static float HDRIWidthPower = 11;
+        public static int HDRIWidth = 2048;
+        public static float HDRISunBrightness = 200;
+        public static bool HDRIHideKerbalsInEditor = true;
 
         #region Equirectangular
 
@@ -93,6 +93,9 @@ namespace CaptureTools
         }*/
 
         /////////////////////////////////////////////////////
+
+        public void CaptureHDRI() =>
+            Instance.CaptureHDRI(HDRIWidth, HDRISunBrightness, HDRIHideKerbalsInEditor);
 
         public void CaptureHDRI(int width, float sunBrightness = 200, bool hideKerbalsInEditor = false, bool disablePostProcessing = true)
         {

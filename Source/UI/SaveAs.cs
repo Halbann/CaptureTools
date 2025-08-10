@@ -55,14 +55,14 @@ namespace CaptureTools.UI
                 valid = valid && validity(textTrimmed);
 
             GUIEnabled.Push(valid);
-            if ((enter || GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", CaptureTools.buttonStyle)))) && valid)
+            if ((enter || GUILayout.Button("Save", GUILayout.Width(ContentSizeCache.Size("Save", Styles.buttonStyle)))) && valid)
             {
                 complete = true;
                 onSave?.Invoke(textTrimmed);
             }
             GUIEnabled.Pop();
 
-            if (escape || GUILayout.Button("Cancel", GUILayout.Width(ContentSizeCache.Size("Cancel", CaptureTools.buttonStyle))))
+            if (escape || GUILayout.Button("Cancel", GUILayout.Width(ContentSizeCache.Size("Cancel", Styles.buttonStyle))))
             {
                 complete = true;
                 onCancel?.Invoke();

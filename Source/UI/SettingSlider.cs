@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CaptureTools.UI
 {
-    public class SettingSliderType
+    public class SettingSlider
     {
         public string name = string.Empty;
         public float min = 0f;
@@ -28,6 +28,11 @@ namespace CaptureTools.UI
         {
             bool update = false;
             return Update(setting, toggle, ref update);
+        }
+
+        public void Update(ref float setting)
+        {
+            setting = Update(setting);
         }
 
         public void Update(ref float setting, ref bool toggle)
@@ -60,7 +65,7 @@ namespace CaptureTools.UI
             setting = (float)Math.Round(GUILayout.HorizontalSlider(setting, sliderMin, sliderMax, GUILayout.Width(sliderWidth)), rounding);
 
             // Box
-            text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), CaptureTools.textBoxStyle, GUILayout.Width(38));
+            text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), Styles.textBoxStyle, GUILayout.Width(38));
             if (float.TryParse(text, out float result))
                 setting = result;
             else if (text == "")

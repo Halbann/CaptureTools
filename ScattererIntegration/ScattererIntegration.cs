@@ -135,7 +135,7 @@ namespace CaptureTools
                     Scatterer.SunFlare sunFlare = instance.scaledSpaceCamera.gameObject.AddComponent<Scatterer.SunFlare>();
                     try
                     {
-                        sunFlare.Configure(FlightGlobals.Bodies.SingleOrDefault((CelestialBody _cb) => _cb.GetName() == _cn.name), _cn.name, Utils.GetScaledTransform(_cn.name), _cn);
+                        sunFlare.Configure(FlightGlobals.Bodies.SingleOrDefault((CelestialBody _cb) => _cb.GetName() == _cn.name), _cn.name, Scatterer.Utils.GetScaledTransform(_cn.name), _cn);
                         sunFlare.start();
 
                         // Near camera hook.

@@ -1,13 +1,11 @@
 using CaptureTools.Integration;
 using CaptureTools.UI;
+using CaptureTools.Utils;
 using KSP.UI;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -18,7 +16,6 @@ namespace CaptureTools
 
         public static CaptureTools Instance;
         public ICaptureToolsUI ui;
-        public static Timing timing = new Timing();
         private bool selfDestruct = false;
 
         public static string filePath = "Captures";
@@ -48,20 +45,6 @@ namespace CaptureTools
         private static int originalTargetFrameRate;
         private static int originalVSyncCount;
 
-        // Sound.
-        //private bool fixSound;
-        //private AudioMixer mixer;
-        //private AudioMixerGroup mixerGroup;
-        //private int sourcesCount;
-        //private bool sourcesWaiting;
-        //private bool mixerAdded = false;
-
-        //private bool pausePhysics;
-        //private float nearClipDistance = 0;
-
-
-
-
         // Camera Tools integration.
         private bool cameraToolsLoaded = false;
         private UnityEngine.Object camToolsInstance;
@@ -71,6 +54,8 @@ namespace CaptureTools
         // Integral UI.
         public bool showClapper = false;
         private static GUIStyle clapperStyle;
+
+        public static KeyCode RecordingKeycode { private set; get; } = KeyCode.F8;
 
         #endregion
 
@@ -141,7 +126,7 @@ namespace CaptureTools
 
             // Not using FixedUpdate for fixed camera updates anymore. Using WaitForFixedUpdate instead.
 
-            if (capturingTrace)
+            if (CapturingTrace)
                 TraceFixedUpdate();
         }
 
@@ -150,10 +135,13 @@ namespace CaptureTools
             if (selfDestruct)
                 return;
 
+            if (!differentPlaybackFramerate && playbackFramerate.Value != Timing.captureFramerate)
+                playbackFramerate.Value = Timing.captureFramerate;
+
             bool alt = Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr);
 
             // Start main capture keybind.
-            if ((Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(toggleUIKeycode))
+            if ((Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(RecordingKeycode))
             {
                 Debug.Log("[CaptureTools]: Pressed record button");
 
@@ -170,29 +158,6 @@ namespace CaptureTools
                 CaptureMulti = false;
                 CaptureMain = false;
             }
-
-            timing.Update();
-
-            // Sound.
-
-            /*if (fixSound)
-            {
-                if (mixer)
-                {
-                    mixer.SetFloat("pitch", timeRatio);
-                }
-
-                //var sources = FindObjectsOfType<AudioSource>();
-                //if (sources.Length != sourcesCount)
-                //{
-                //    sourcesCount = sources.Length;
-
-                //    for (int i = 0; i < sources.Length; i++)
-                //    {
-                //        sources[i].outputAudioMixerGroup = mixerGroup;
-                //    }
-                //}
-            }*/
         }
 
         protected void OnGUI()
@@ -225,16 +190,6 @@ namespace CaptureTools
             if (Instance == this)
                 Instance = null;
 
-            // Sound.
-
-            //RemoveSoundSourceEvents();
-
-
-            // Timing.
-
-            timing.Reset();
-
-
             // Main.
 
             if (selfDestruct)
@@ -246,14 +201,9 @@ namespace CaptureTools
 
             RestoreFramerate();
 
-
             // Serialisation.
 
             SaveSettings();
-
-            if (autosaveCoroutine != null)
-                StopCoroutine(autosaveCoroutine);
-
 
             // Stop capture.
 
@@ -281,7 +231,7 @@ namespace CaptureTools
             settings.SetValue("filePath", filePath, true);
 
             // Capture
-            settings.SetValue("captureFramerate", captureFramerate, true);
+            settings.SetValue("captureFramerate", Timing.captureFramerate, true);
             settings.SetValue("differentPlaybackFramerate", differentPlaybackFramerate, true);
             settings.SetValue("playbackFramerate", playbackFramerate, true);
             settings.SetValue("useFixedUpdate", useFixedUpdate, true);
@@ -298,6 +248,7 @@ namespace CaptureTools
             settings.SetValue("mainAspectRatio", mainAspectRatio, true);
             settings.SetValue("mainHeight", mainHeight, true);
             settings.SetValue("drawUIOnMain", drawUIOnMain, true);
+            settings.SetValue("recordingKeycode", RecordingKeycode.ToString(), true);
 
             // Main smoothing multipliers.
             settings.SetValue("mainPositionSmoothTime", mainPositionSmoothTime, true);
@@ -332,8 +283,8 @@ namespace CaptureTools
             settings.SetValue("buildTime", buildTime, true);
 
             // UI
-            settings.SetValue("windowPosition", ui.windowRect.position, true);
-            settings.SetValue("toggleUIKeycode", ui.toggleUIKeycode.ToString(), true);
+            settings.SetValue("windowPosition", IMGUI.windowRect.position, true);
+            settings.SetValue("toggleUIKeycode", IMGUI.toggleUIKeycode.ToString(), true);
 
             ConfigNode file = new ConfigNode();
             file.AddNode(settings);
@@ -350,13 +301,13 @@ namespace CaptureTools
 
             // All
             settings.TryGetValue("filePath", ref filePath);
-            settings.TryGetValue("captureFramerate", captureFramerate);
+            settings.TryGetValue("captureFramerate", Timing.captureFramerate);
             settings.TryGetValue("playbackFramerate", playbackFramerate);
             settings.TryGetValue("differentPlaybackFramerate", ref differentPlaybackFramerate);
             settings.TryGetValue("useFixedUpdate", ref useFixedUpdate);
             settings.TryGetValue("previewOnly", ref previewOnly);
             settings.TryGetValue("fullRes", ref fullRes);
-            settings.TryGetValue("CRF", ref CRF);
+            settings.TryGetValue("CRF", CRF);
 
             if (!settings.TryGetValue("presetAuthor", ref FFmpegPreset.defaultAuthor))
                 FFmpegPreset.defaultAuthor = Environment.UserName;
@@ -368,7 +319,6 @@ namespace CaptureTools
             // Main 
             settings.TryGetValue("mainCaptureAudio", ref mainCaptureAudio);
             settings.TryGetValue("audioOnly", ref audioOnly);
-            //settings.TryGetValue("positionSmoothing", ref positionSmoothing);
             settings.TryGetValue("mainSmoothTime", ref mainSmoothTime);
             settings.TryGetValue("mainAspectRatio", ref mainAspectRatio);
             settings.TryGetValue("mainHeight", ref mainHeight);
@@ -394,13 +344,11 @@ namespace CaptureTools
             settings.TryGetValue("bdTargetDelay", ref bdTargetDelay);
 
             // Trace
-            //settings.TryGetValue("traceFramerateSlider", ref traceFramerateSlider);
             settings.TryGetValue("traceFramerate", ref traceFramerate);
 
             string traceFrameStr = traceFrameOfReference.ToString();
             if (settings.TryGetValue("traceFrameOfReference", ref traceFrameStr))
                 traceFrameOfReference = (TraceFrame)Enum.Parse(typeof(TraceFrame), traceFrameStr);
-
 
             // HDRI
             settings.TryGetValue("HDRIWidth", ref HDRIWidth);
@@ -412,22 +360,31 @@ namespace CaptureTools
             settings.TryGetValue("buildTime", ref buildTime);
 
             // UI
-            Vector2 windowPosition = ui.windowRect.position;
+            Vector2 windowPosition = IMGUI.windowRect.position;
             if (settings.TryGetValue("windowPosition", ref windowPosition))
-                ui.windowRect.position = windowPosition;
+                IMGUI.windowRect.position = windowPosition;
 
+            IMGUI.toggleUIKeycode = TryParseKeycode(IMGUI.toggleUIKeycode, "toggleUIKeycode", settings);
+            RecordingKeycode = TryParseKeycode(RecordingKeycode, "recordingKeycode", settings);
+        }
+
+        private static KeyCode TryParseKeycode(KeyCode defaultCode, string name, ConfigNode settings)
+        {
             try
             {
-                string toggleUIKeycodeString = ui.toggleUIKeycode.ToString();
-                if (settings.TryGetValue("toggleUIKeycode", ref toggleUIKeycodeString))
-                    ui.toggleUIKeycode = (KeyCode)Enum.Parse(typeof(KeyCode), toggleUIKeycodeString);
+                string keycodeString = defaultCode.ToString();
+
+                if (settings.TryGetValue(name, ref keycodeString))
+                    defaultCode = (KeyCode)Enum.Parse(typeof(KeyCode), keycodeString);
+
+                return defaultCode;
             }
             catch
             {
-                Debug.LogError("[CaptureTools]: Failed to parse toggleUIKeycode");
+                CTDebug.LogError("Failed to parse toggleUIKeycode");
+                return defaultCode;
             }
         }
-
 
         #endregion
 
@@ -466,4 +423,3 @@ namespace CaptureTools
         #endregion
     }
 }
-

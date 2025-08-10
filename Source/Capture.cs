@@ -56,7 +56,7 @@ namespace CaptureTools
         public const int minFramerate = 1;
         public const int maxFramerate = 240;
 
-        public static float CRF = 15;
+        public static Constrained CRF = new Constrained(15, 0, 51, 0);
         public static Constrained playbackFramerate = new Constrained(60, minFramerate, maxFramerate, 0);
         public static bool differentPlaybackFramerate = false;
         public static bool previewOnly = false;
@@ -69,7 +69,7 @@ namespace CaptureTools
         private static List<RenderTexture> renderTextures = new List<RenderTexture>();
         private int renderWidth;
         private int renderHeight;
-        private int multicamCaptureStartFrame;
+        public int MulticamCaptureStartFrame { private set; get; }
         private Vector3 multicamUp;
 
         public static bool showPreview = true;
@@ -127,7 +127,7 @@ namespace CaptureTools
 
         // Main
 
-        private int mainCaptureStartFrame;
+        public int MainCaptureStartFrame { private set; get; }
         private bool captureSceneIsFlight;
         private CaptureAudioUnity mainAudioCapture;
         private Transform audioListenerParent;
@@ -305,9 +305,9 @@ namespace CaptureTools
             InitPreviewMaterial();
 
             lastVessel = FlightGlobals.ActiveVessel;
-            mainCaptureStartFrame = Time.frameCount;
+            MainCaptureStartFrame = Time.frameCount;
             mainCaptureInitialised = false;
-            Time.captureFramerate = captureFramerate;
+            Time.captureFramerate = Timing.captureFramerate;
 
             if (isFlight)
             {
@@ -421,7 +421,7 @@ namespace CaptureTools
 
         private void ControlFramerate()
         {
-            int captureFramerate = CaptureTools.captureFramerate;
+            int captureFramerate = Timing.captureFramerate;
 
             if (Time.captureFramerate != captureFramerate)
                 Time.captureFramerate = captureFramerate;
@@ -749,8 +749,8 @@ namespace CaptureTools
             // Finish setup.
             BlockHighlighters(true);
             InitPreviewMaterial();
-            multicamCaptureStartFrame = Time.frameCount;
-            Time.captureFramerate = captureFramerate;
+            MulticamCaptureStartFrame = Time.frameCount;
+            Time.captureFramerate = Timing.captureFramerate;
             multicamUp = FlightCamera.fetch == null ? Vector3.up : FlightCamera.fetch.getReferenceFrame() * Vector3.up;
 
             if (useFixedUpdate)

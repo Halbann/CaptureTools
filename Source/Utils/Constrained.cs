@@ -4,7 +4,7 @@ namespace CaptureTools.Utils
 {
     public class Constrained
     {
-        private float _value;
+        private float value;
 
         public readonly float? min;
         public readonly float? max;
@@ -12,11 +12,11 @@ namespace CaptureTools.Utils
 
         public float Value
         {
-            get => _value;
+            get => value;
             set
             {
-                if (value != _value)
-                    _value = ApplyConstraints(value);
+                if (value != this.value)
+                    this.value = ApplyConstraints(value);
             }
         }
 
@@ -25,8 +25,8 @@ namespace CaptureTools.Utils
             this.min = min;
             this.max = max;
             this.digits = digits;
-            _value = 0;
-            _value = ApplyConstraints(value);
+            this.value = 0;
+            this.value = ApplyConstraints(value);
         }
 
         private float ApplyConstraints(float input)

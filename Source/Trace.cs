@@ -13,7 +13,7 @@ namespace CaptureTools
 {
     partial class CaptureTools
     {
-        private bool capturingTrace = false;
+        public bool CapturingTrace { private set; get; }
 
         internal static string tracesPath;
         private static string[] excludedParts = new string[] { "strutConnector", "fuelLine", "parachuteRadial" };
@@ -22,7 +22,7 @@ namespace CaptureTools
         //private static float traceFramerateSlider = 4;
         internal static float traceFramerate = 24;
         internal static float traceInterval;
-        private static float traceStartTime;
+        public static float traceStartTime { private set; get; }
         internal static int frameCount;
 
         private List<TraceRecorder> traceRecorders;
@@ -30,19 +30,19 @@ namespace CaptureTools
         internal static Transform traceTransform;
         //private Vector3 centreVelocity;
 
-        public TraceFrame traceFrameOfReference = TraceFrame.World;
+        public static TraceFrame traceFrameOfReference = TraceFrame.World;
         public enum TraceFrame
         {
             World,
             Vessel
         }
 
-        private void StartPartCapture()
+        public void StartPartCapture()
         {
-            if (capturingTrace)
+            if (CapturingTrace)
                 return;
 
-            capturingTrace = true;
+            CapturingTrace = true;
 
             TraceRecorder.recordedFrames = 0;
             frameCount = 0;
@@ -170,7 +170,7 @@ namespace CaptureTools
             rec.hidePart = true;
         }
 
-        private void StopPartCapture()
+        public void StopPartCapture()
         {
             // Stop each recorder.
             foreach (TraceRecorder r in traceRecorders)
@@ -186,12 +186,12 @@ namespace CaptureTools
             Destroy(traceTransform.gameObject);
 
             // Stop the frame counter and finish.
-            capturingTrace = false;
+            CapturingTrace = false;
         }
 
         internal void TraceFixedUpdate()
         {
-            if (capturingTrace)
+            if (CapturingTrace)
             {
                 frameCount++;
 

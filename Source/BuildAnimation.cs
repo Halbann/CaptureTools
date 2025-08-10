@@ -13,15 +13,29 @@ namespace CaptureTools
     {
         // Build animation.
         private List<Part> buildOrder = new List<Part>();
-        private float buildTime = 5f;
+        public float buildTime = 5f;
         private Coroutine buildCoroutine;
         private Coroutine[] partCoroutines;
         private List<Vector3> originalPositions = new List<Vector3>();
         private List<bool> partsVisible = new List<bool>();
-        //private float partAnimateTime = 1f;
 
-        private float buildPartSpeed = 0.1f;
-        private float buildPartMaxSpeed = 500f;
+        public float buildPartSpeed = 0.1f;
+        public float buildPartMaxSpeed = 500f;
+
+        public bool Building
+        {
+            get => buildCoroutine != null;
+            set
+            {
+                if (Building == value)
+                    return;
+
+                if (value)
+                    buildCoroutine = StartCoroutine(StartBuild(buildTime));
+                else
+                    StopBuild();
+            }
+        }
         
         #region Animate Build
 
@@ -90,7 +104,7 @@ namespace CaptureTools
             StopBuild();
         }
 
-        void StopBuild()
+        public void StopBuild()
         {
             foreach (var coroutine in partCoroutines)
             {

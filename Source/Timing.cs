@@ -6,6 +6,7 @@ using CaptureTools.Utils;
 
 namespace CaptureTools
 {
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
     public class Timing : MonoBehaviour
     {
         public static Timing Instance { get; private set; }
@@ -20,10 +21,10 @@ namespace CaptureTools
         public const int minFramerate = 1;
         public const int maxFramerate = 240;
 
-        public static readonly Setting maxDeltaTime = new Setting(new Constrained(Time.maximumDeltaTime, 0.02f, 0.1f), () => Time.maximumDeltaTime, v => Time.maximumDeltaTime = v);
-        public static readonly Setting fixedDeltaTime = new Setting(new Constrained(Time.fixedDeltaTime, 0.02f, 0.1f), () => Time.fixedDeltaTime, v => Time.fixedDeltaTime = v);
+        public static readonly Setting maxDeltaTime = new Setting(new Constrained(GameSettings.PHYSICS_FRAME_DT_LIMIT, 0.02f, 0.1f), () => Time.maximumDeltaTime, v => Time.maximumDeltaTime = v);
+        public static readonly Setting fixedDeltaTime = new Setting(new Constrained(0.02f, 0.02f, 0.1f), () => Time.fixedDeltaTime, v => Time.fixedDeltaTime = v);
         public static readonly Setting captureFramerate = new Setting(new Constrained(60, minFramerate, maxFramerate), () => Time.captureFramerate, v => Time.captureFramerate = (int)v);
-        public static readonly Setting timeScale = new Setting(new Constrained(Time.timeScale, 0, 1), () => Time.timeScale, v => Time.timeScale = v);
+        public static readonly Setting timeScale = new Setting(new Constrained(1f, 0, 1), () => Time.timeScale, v => Time.timeScale = v);
 
         public class Setting
         {
@@ -67,6 +68,7 @@ namespace CaptureTools
 
             public static implicit operator float(Setting c) => c.constrained;
             public static implicit operator int(Setting c) => (int)c.constrained;
+            public static implicit operator Constrained(Setting c) => c.constrained;
         }
 
         protected void Awake()
