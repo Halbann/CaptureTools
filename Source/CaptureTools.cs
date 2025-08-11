@@ -1,4 +1,5 @@
 using CaptureTools.Integration;
+using CaptureTools.Trace;
 using CaptureTools.UI;
 using CaptureTools.Utils;
 using KSP.UI;
@@ -17,6 +18,7 @@ namespace CaptureTools
         public static CaptureTools Instance;
         public ICaptureToolsUI ui;
         public BuildAnimation buildAnimation;
+        public Tracer trace;
         private bool selfDestruct = false;
 
         public static string filePath = "Captures";
@@ -74,7 +76,9 @@ namespace CaptureTools
                 Instance = this;
             }
 
+            // todo: Should these be addons?
             buildAnimation = gameObject.AddComponent<BuildAnimation>();
+            trace = gameObject.AddComponent<Tracer>();
         }
 
         internal void Start()
@@ -99,7 +103,7 @@ namespace CaptureTools
             BD.BDArmouryCheck();
 
             // Trace.
-            TraceRecorder.recordedFrames = 0;
+            PartRecorder.recordedFrames = 0;
         }
 
         internal void LateUpdate()
@@ -128,9 +132,6 @@ namespace CaptureTools
                 UpdateMainCameraFixed();
 
             // Not using FixedUpdate for fixed camera updates anymore. Using WaitForFixedUpdate instead.
-
-            if (CapturingTrace)
-                TraceFixedUpdate();
         }
 
         internal void Update()
@@ -275,8 +276,8 @@ namespace CaptureTools
             settings.SetValue("bdTargetDelay", bdTargetDelay, true);
 
             // Trace
-            settings.SetValue("traceFramerate", traceFramerate, true);
-            settings.SetValue("traceFrameOfReference", traceFrameOfReference.ToString(), true);
+            settings.SetValue("traceFramerate", Tracer.framerate, true);
+            settings.SetValue("traceFrameOfReference", Tracer.frameOfReference.ToString(), true);
 
             // HDRI
             settings.SetValue("HDRIWidth", HDRI.width, true);
@@ -349,11 +350,11 @@ namespace CaptureTools
             settings.TryGetValue("bdTargetDelay", ref bdTargetDelay);
 
             // Trace
-            settings.TryGetValue("traceFramerate", ref traceFramerate);
+            settings.TryGetValue("traceFramerate", ref Tracer.framerate);
 
-            string traceFrameStr = traceFrameOfReference.ToString();
+            string traceFrameStr = Tracer.frameOfReference.ToString();
             if (settings.TryGetValue("traceFrameOfReference", ref traceFrameStr))
-                traceFrameOfReference = (TraceFrame)Enum.Parse(typeof(TraceFrame), traceFrameStr);
+                Tracer.frameOfReference = (Tracer.ReferenceFrame)Enum.Parse(typeof(Tracer.ReferenceFrame), traceFrameStr);
 
             // HDRI
             settings.TryGetValue("HDRIWidth", ref HDRI.width);

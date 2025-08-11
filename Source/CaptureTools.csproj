@@ -119,6 +119,7 @@
     <Compile Include="EditorZoom.cs" />
     <Compile Include="HDRI.cs" />
     <Compile Include="Timing.cs" />
+    <Compile Include="Trace\Tracer.cs" />
     <Compile Include="UI\ICaptureToolsUI.cs" />
     <Compile Include="UI\IMGUI.cs" />
     <Compile Include="Utils\ConfigNodeExtensions.cs" />
@@ -140,7 +141,7 @@
     <Compile Include="FFmpegOut\Internal\Blitter.cs" />
     <Compile Include="FFmpegOut\Internal\FFmpegPipe.cs" />
     <Compile Include="Addons.cs" />
-    <Compile Include="Trace.cs" />
+    <Compile Include="Trace\PartRecorder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FFmpegPresets\Tracked.cs" />
     <Compile Include="UI\ContentSizeCache.cs" />

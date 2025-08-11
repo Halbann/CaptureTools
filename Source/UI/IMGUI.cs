@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using CaptureTools.Utils;
+using CaptureTools.Trace;
 
 namespace CaptureTools.UI
 {
@@ -211,9 +212,7 @@ namespace CaptureTools.UI
         private void CaptureSection()
         {
             GUILayout.BeginVertical(Styles.boxStyle);
-
-            if (ct.CaptureMain || ct.CaptureMulti)
-                GUI.enabled = false;
+            GUIEnabled.Push(!ct.CaptureMain && !ct.CaptureMulti);
 
             FramerateSlider(captureFramerateSlider, Timing.captureFramerate);
 
@@ -228,7 +227,7 @@ namespace CaptureTools.UI
             CaptureTools.fullRes = GUILayout.Toggle(CaptureTools.fullRes, "Use Screen Resolution");
             CaptureTools.previewOnly = GUILayout.Toggle(CaptureTools.previewOnly, "Preview Only");
 
-            GUI.enabled = true;
+            GUIEnabled.Pop();
 
             CaptureTools.showPreview = GUILayout.Toggle(CaptureTools.showPreview, "Show Preview");
 
@@ -449,7 +448,6 @@ namespace CaptureTools.UI
                 GUILayout.EndVertical();
             }
 
-
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (SectionButton("Multicam", ref showMulticamSection))
@@ -477,51 +475,45 @@ namespace CaptureTools.UI
         private void TraceSection()
         {
             GUILayout.BeginVertical(Styles.boxStyle);
-
-            if (!HighLogic.LoadedSceneIsFlight)
-                GUI.enabled = false;
+            GUIEnabled.Push(HighLogic.LoadedSceneIsFlight);
 
             // Record button.
-            if (RecordButton(ct.CapturingTrace, CaptureTools.TraceStartTime, false))
-            {
-                if (ct.CapturingTrace)
-                    ct.StopPartCapture();
-                else
-                    ct.StartPartCapture();
-            }
+            if (RecordButton(ct.trace.enabled, ct.trace.StartTime, false))
+                ct.trace.enabled = !ct.trace.enabled;
 
             // File size.
             GUILayout.BeginHorizontal();
             GUILayout.Label("Est. File Size: ");
 
-            if (TraceRecorder.recordedFrames == 0)
+            if (PartRecorder.recordedFrames == 0)
             {
                 GUILayout.Label("0 MB");
             }
             else
             {
-                float estimatedFileSizeMB = (0.06947368421f * TraceRecorder.recordedFrames) / 1000f;
-                if (GUILayout.Button($"{estimatedFileSizeMB:N1} MB") && !ct.CapturingTrace)
-                    TraceRecorder.recordedFrames = 0;
+                float estimatedFileSizeMB = (0.06947368421f * PartRecorder.recordedFrames) / 1000f;
+                if (GUILayout.Button($"{estimatedFileSizeMB:N1} MB") && !ct.trace.enabled)
+                    PartRecorder.recordedFrames = 0;
             }
 
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 
-            if (!ct.CapturingTrace)
+            if (!ct.trace.enabled)
             {
                 // Frame of reference.
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Frame of Reference: ");
-                string[] frameStrings = Enum.GetNames(typeof(CaptureTools.TraceFrame));
-                CaptureTools.traceFrameOfReference = (CaptureTools.TraceFrame)GUILayout.SelectionGrid((int)CaptureTools.traceFrameOfReference, frameStrings, frameStrings.Length);
+                string[] frameStrings = Enum.GetNames(typeof(Tracer.ReferenceFrame));
+                Tracer.frameOfReference = (Tracer.ReferenceFrame)GUILayout.SelectionGrid((int)Tracer.frameOfReference, frameStrings, frameStrings.Length);
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
 
-                traceFramerateSlider.Update(ref CaptureTools.traceFramerate);
+                // Framerate.
+                traceFramerateSlider.Update(ref Tracer.framerate);
             }
 
-            GUI.enabled = true;
+            GUIEnabled.Pop();
             GUILayout.EndVertical();
         }
 
@@ -732,7 +724,7 @@ namespace CaptureTools.UI
             while (true)
             {
                 if (guiEnabled)
-                    ct.SaveSettings();
+                    ct?.SaveSettings();
 
                 yield return new WaitForSecondsRealtime(10f);
             }
