@@ -48,10 +48,6 @@
     <StartWorkingDirectory>$(ReferencePath)</StartWorkingDirectory>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>References\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -139,7 +135,6 @@
     <Compile Include="CaptureTools.cs" />
     <Compile Include="FFmpegOut\AssetLoader.cs" />
     <Compile Include="FFmpegOut\CameraCapture.cs" />
-    <Compile Include="FFmpegOut\FFmpegPreset.cs" />
     <Compile Include="FFmpegOut\FFmpegSession.cs" />
     <Compile Include="FFmpegOut\FrameRateController.cs" />
     <Compile Include="FFmpegOut\Internal\Blitter.cs" />

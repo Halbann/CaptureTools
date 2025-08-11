@@ -16,7 +16,6 @@ namespace FFmpegOut
 
         public int Width { get; set; } = 1920;
         public int Height { get; set; } = 1080;
-        FFmpegPreset Preset { get; set; }
         public float Framerate { get; set; } = 60;
 
         // Capture Tools additions.
