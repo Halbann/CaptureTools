@@ -11,7 +11,7 @@ namespace CaptureTools
         private Camera[] editorCameras;
 
         private Camera[] EditorCameras =>
-            editorCameras != null ? editorCameras : (editorCameras = EditorLogic.fetch.editorCamera.GetComponentsInChildren<Camera>());
+            editorCameras ?? (editorCameras = EditorLogic.fetch.editorCamera.GetComponentsInChildren<Camera>());
 
         protected void Update()
         {

@@ -102,9 +102,13 @@ namespace CaptureTools
         public void LoadFromFile()
         {
             if (config != null)
+            {
                 TryLoadPresetFromURLConfig(this, config);
+            }
             else if (!string.IsNullOrEmpty(path))
+            {
                 TryLoadPresetFromFile(this, path);
+            }
             else
             {
                 CTDebug.LogError("Attempted to reload a preset without a config or path. Cannot reload.");
@@ -131,13 +135,13 @@ namespace CaptureTools
 
                     if (presetNodes.Count > 1)
                         throw new Exception($"Multiple FFmpeg presets found in {file}. Capture Tools only allows one per file in PluginData " +
-                                $"in order to make saving and loading faster.");
+                                "in order to make saving and loading faster.");
                 }
 
                 if (!presetNodes.Any())
                     return false;
 
-                preset.Load(presetNodes.First());
+                preset.Load(presetNodes[0]);
                 preset.path = file;
                 preset.config = null;
                 preset.Editable = true;

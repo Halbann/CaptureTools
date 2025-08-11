@@ -6,7 +6,7 @@ using static UnityEngine.AudioRenderer;
 
 namespace UnityEditor.Recorder.Input
 {
-    class MyAudioRendererWrapper
+    sealed class MyAudioRendererWrapper
     {
         MyAudioRendererWrapper()
         {
@@ -158,9 +158,7 @@ namespace UnityEditor.Recorder.Input
 
                 const ushort bufferCount = 1;
 
-                if (s_BufferManager != null)
-                    s_BufferManager.Dispose();
-
+                s_BufferManager?.Dispose();
                 s_BufferManager = new BufferManager(bufferCount, sampleFrameCount, m_ChannelCount);
 
                 MyAudioRendererWrapper.Render(MainBuffer);

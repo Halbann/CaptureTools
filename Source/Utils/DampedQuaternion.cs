@@ -55,7 +55,7 @@ namespace CaptureTools.Utils
 
     public static class QuaternionExtension
     {
-        public static Quaternion SmoothDamp(this in Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
+        public static Quaternion SmoothDamp(this Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
         {
             if (deltaTime < Mathf.Epsilon)
                 return rot;

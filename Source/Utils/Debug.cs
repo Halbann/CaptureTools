@@ -24,11 +24,11 @@ namespace CaptureTools.Utils
         public float scale = 2f;
         public string text = "";
 
-        LineRenderer xLine;
-        LineRenderer yLine;
-        LineRenderer zLine;
+        private LineRenderer xLine;
+        private LineRenderer yLine;
+        private LineRenderer zLine;
 
-        void Start()
+        protected void Start()
         {
             if (!drawTransforms)
             {
@@ -49,7 +49,7 @@ namespace CaptureTools.Utils
             zLine.enabled = drawEnabled;
         }
 
-        void OnGUI()
+        protected void OnGUI()
         {
             if (drawTransforms && Event.current.type.Equals(EventType.Repaint))
             {
@@ -63,7 +63,7 @@ namespace CaptureTools.Utils
         }
 
         // Update is called once per frame
-        void Update()
+        protected void Update()
         {
             if (CTDebug.draw)
             {
@@ -91,16 +91,16 @@ namespace CaptureTools.Utils
             drawEnabled = CTDebug.draw;
         }
 
-        void SetupLine(LineRenderer line, Color color)
+        private void SetupLine(LineRenderer line, Color color)
         {
             line.material = new Material(Shader.Find("Unlit/Color"));
             line.material.color = color;
             line.widthMultiplier = 0.03f;
         }
 
-        void UpdateLine(LineRenderer line, Vector3 direction)
+        private void UpdateLine(LineRenderer line, Vector3 direction)
         {
-            line.SetPositions(new Vector3[] { transform.position, transform.position + direction * scale });
+            line.SetPositions(new Vector3[] { transform.position, transform.position + (direction * scale) });
         }
     }
 }

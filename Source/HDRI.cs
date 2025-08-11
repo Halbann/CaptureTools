@@ -37,7 +37,7 @@ namespace CaptureTools
             GameScenes scene = HighLogic.LoadedScene;
             if (scene == GameScenes.FLIGHT || scene == GameScenes.SPACECENTER)
             {
-                List<Camera> flightCameras = CaptureTools.cameraNames.Select(n => Camera.allCameras.FirstOrDefault(c => c.name == n)).ToList();
+                List<Camera> flightCameras = CaptureTools.cameraNames.ConvertAll(n => Camera.allCameras.FirstOrDefault(c => c.name == n));
 
                 if (flightCameras.Count < 1)
                 {
@@ -186,7 +186,7 @@ namespace CaptureTools
 
             try
             {
-                string sph = "SPHmodern/SPH_interior_modern/SPH_Interior_Geometry/model_sph_interior_main_v16";
+                const string sph = "SPHmodern/SPH_interior_modern/SPH_Interior_Geometry/model_sph_interior_main_v16";
                 material = GameObject.Find(sph).GetComponent<MeshRenderer>().materials[2];
                 illum = material.GetTexture("_Illum");
             }

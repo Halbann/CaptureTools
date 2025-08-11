@@ -81,18 +81,16 @@ namespace CaptureTools
         {
             // Find all .cfg files in the PluginData directory.
             string[] presetFiles = Directory.GetFiles(pluginDataPath, "*.cfg", SearchOption.AllDirectories);
-            List<ConfigNode> fileNodes = new List<ConfigNode>();
 
             foreach (string file in presetFiles)
             {
                 FFmpegPreset preset = new FFmpegPreset();
 
-                if (FFmpegPreset.TryLoadPresetFromFile(preset, file))
-                    if (AddPreset(preset, true))
-                    {
-                        preset.path = file;
-                        preset.Editable = true;
-                    }
+                if (FFmpegPreset.TryLoadPresetFromFile(preset, file) && AddPreset(preset, true))
+                {
+                    preset.path = file;
+                    preset.Editable = true;
+                }
             }
         }
 
@@ -108,7 +106,7 @@ namespace CaptureTools
         {
             if (string.IsNullOrEmpty(presetName))
             {
-                CTDebug.LogWarning($"Attempted to set current preset with an empty name.");
+                CTDebug.LogWarning("Attempted to set current preset with an empty name.");
                 return;
             }
 
@@ -146,7 +144,7 @@ namespace CaptureTools
                 CTDebug.LogError("Failed to duplicate preset. Preset with name '" + presetName + "' does not exist.");
                 return false;
             }
-        }*/
+        }
 
         private static string GetUnusedName(string name)
         {
@@ -154,6 +152,6 @@ namespace CaptureTools
                 return name;
 
             return GetUnusedName(name + " (Copy)");
-        }
+        }*/
     }
 }

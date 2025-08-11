@@ -1,5 +1,6 @@
 ﻿using Deferred;
 using UnityEngine;
+using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -15,7 +16,7 @@ namespace CaptureTools
 
         public static void SetupCameras(Camera localSpace, Camera scaledSpace, bool doubleAA = false)
         {
-            Debug.Log($"[CaptureTools]: Setting up Deferred integration on {localSpace.name} and {scaledSpace.name}.");
+            CTDebug.Log($"Setting up Deferred integration on {localSpace.name} and {scaledSpace.name}.");
 
             if (localSpace != null)
             {
@@ -56,6 +57,7 @@ namespace CaptureTools
 
                     // Thoroughly disable the collider, because Scatterer is not fast enough. Otherwise can get exceptions on the next FixedUpdate when various stock raycasts hit it.
                     for (int i = 0; i < count; i++)
+                    {
                         if ((child = parent.GetChild(i)).name == "Quad")
                         {
                             if ((collider = child.GetComponent<MeshCollider>()) != null)
@@ -66,6 +68,7 @@ namespace CaptureTools
                             }
                             break;
                         }
+                    }
                 }
 
                 if (!scaledSpace.GetComponent<RefreshLegacyAmbient>())

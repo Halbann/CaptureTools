@@ -5,7 +5,7 @@ namespace CaptureTools.UI
 {
     public static class ContentSizeCache
     {
-        private static Dictionary<string, float> contentSizes = new Dictionary<string, float>();
+        private static readonly Dictionary<string, float> contentSizes = new Dictionary<string, float>();
 
         public static float Size(string content, GUIStyle style)
         {

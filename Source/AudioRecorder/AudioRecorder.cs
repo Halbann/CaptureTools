@@ -69,10 +69,10 @@ namespace UnityEditor.Recorder
         {
             var closewriter = _binwriter;
             _binwriter = null;
-            int subformat = 3; // float
+            const int subformat = 3; // float
             //uint numchannels = UnityHelpers.GetNumAudioChannels();
-            uint numchannels = 2;
-            int numbits = 32;
+            const uint numchannels = 2;
+            const int numbits = 32;
             int samplerate = AudioSettings.outputSampleRate;
 
             //Debug.Log("Closing file");

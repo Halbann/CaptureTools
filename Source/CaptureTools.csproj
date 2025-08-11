@@ -137,8 +137,6 @@
     <Compile Include="BuildAnimation.cs" />
     <Compile Include="Capture.cs" />
     <Compile Include="CaptureTools.cs" />
-    <Compile Include="Assets.cs" />
-    <Compile Include="FFmpegOut\AssemblyInfo.cs" />
     <Compile Include="FFmpegOut\AssetLoader.cs" />
     <Compile Include="FFmpegOut\CameraCapture.cs" />
     <Compile Include="FFmpegOut\FFmpegPreset.cs" />

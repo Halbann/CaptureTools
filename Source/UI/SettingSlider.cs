@@ -20,14 +20,7 @@ namespace CaptureTools.UI
 
         public float Update(float setting)
         {
-            bool update = false;
-            return Update(setting, false, ref update).setting;
-        }
-
-        public (float setting, bool toggle) Update(float setting, bool toggle)
-        {
-            bool update = false;
-            return Update(setting, toggle, ref update);
+            return Update(setting, false).setting;
         }
 
         public void Update(ref float setting)
@@ -40,7 +33,7 @@ namespace CaptureTools.UI
             (setting, toggle) = Update(setting, toggle);
         }
 
-        public (float setting, bool toggle) Update(float setting, bool toggle, ref bool updated)
+        public (float setting, bool toggle) Update(float setting, bool toggle)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(3);
@@ -49,8 +42,6 @@ namespace CaptureTools.UI
             if (useToggle)
             {
                 toggle = GUILayout.Toggle(toggle, "", GUILayout.Width(12));
-                bool guiEnabled = GUI.enabled;
-
                 if (!toggle)
                     GUIEnabled.Push(false);
             }
@@ -68,7 +59,7 @@ namespace CaptureTools.UI
             text = GUILayout.TextField(setting.ToString("N" + rounding.ToString()), Styles.textBoxStyle, GUILayout.Width(38));
             if (float.TryParse(text, out float result))
                 setting = result;
-            else if (text == "")
+            else if (text.Length == 0)
                 setting = 0;
 
             // Toggle GUI enabled reset.

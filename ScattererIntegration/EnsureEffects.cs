@@ -12,6 +12,7 @@ namespace CaptureTools
         private void EnableAtmosphere()
         {
             // Effects can be disabled after rendering the TextureReplacer cubemap.
+            // Therefore they must be re-enabled.
 
             var bodies = Scatterer.Scatterer.Instance.planetsConfigsReader.scattererCelestialBodies;
             var active = bodies.Find(m => !ReferenceEquals(null, m.prolandManager));
@@ -19,5 +20,4 @@ namespace CaptureTools
             active.prolandManager.GetSkyNode().localScatteringContainer.UpdateContainer();
         }
     }
-}
-    
+}    

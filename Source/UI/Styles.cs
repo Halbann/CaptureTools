@@ -19,14 +19,18 @@ namespace CaptureTools.UI
 
             boxStyle = GUI.skin.GetStyle("Box");
 
-            textBoxStyle = new GUIStyle(GUI.skin.textField);
-            textBoxStyle.alignment = TextAnchor.MiddleCenter;
+            textBoxStyle = new GUIStyle(GUI.skin.textField)
+            {
+                alignment = TextAnchor.MiddleCenter
+            };
 
             buttonStyle = GUI.skin.button;
 
-            smallTextButtonStyle = new GUIStyle(buttonStyle);
-            smallTextButtonStyle.fontSize = 10;
-            smallTextButtonStyle.alignment = TextAnchor.MiddleRight;
+            smallTextButtonStyle = new GUIStyle(buttonStyle)
+            {
+                fontSize = 10,
+                alignment = TextAnchor.MiddleRight
+            };
         }
     }
 }

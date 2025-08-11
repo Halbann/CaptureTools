@@ -13,7 +13,7 @@ namespace FFmpegOut
     {
         #region Factory method
 
-        static System.Type[] _initialComponents =
+        static readonly System.Type[] _initialComponents =
             { typeof(Camera), typeof(Blitter) };
 
         public static GameObject CreateInstance(Camera source)
@@ -68,10 +68,13 @@ namespace FFmpegOut
             if (_mesh == null)
             {
                 // Index-only triangle mesh
-                _mesh = new Mesh();
-                _mesh.vertices = new Vector3[3];
-                _mesh.triangles = new int [] { 0, 1, 2 };
-                _mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
+                _mesh = new Mesh
+                {
+                    vertices = new Vector3[3],
+                    triangles = new int[] { 0, 1, 2 },
+                    bounds = new Bounds(Vector3.zero, Vector3.one)
+                };
+
                 _mesh.UploadMeshData(true);
 
                 // Blitter shader material

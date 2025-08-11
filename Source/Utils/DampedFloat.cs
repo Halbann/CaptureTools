@@ -23,13 +23,13 @@ namespace CaptureTools.Utils
             : this(initialValue, smoothTime, Mathf.Infinity) { }
 
         public float Update(float dt, float smoothTime = -1) =>
-            Update(current, target, dt);
+            Update(current, target, dt, smoothTime);
 
         public float UpdateFrom(float current, float dt, float smoothTime = -1) =>
-            Update(current, target, smoothTime, dt);
+            Update(current, target, dt, smoothTime);
 
         public float UpdateTo(float target, float dt, float smoothTime = -1) =>
-            Update(current, target, smoothTime, dt);
+            Update(current, target, dt, smoothTime);
 
         public float Update(float current, float target, float dt, float smoothTime = -1)
         {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using CaptureTools.Utils;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -40,7 +41,7 @@ namespace FFmpegOut
         }
 
         //[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private void Awake()
+        protected void Awake()
         {
             _bundlePath = KSPUtil.ApplicationRootPath + "GameData" +
                 Path.DirectorySeparatorChar + "CaptureTools" +
@@ -75,7 +76,6 @@ namespace FFmpegOut
                 while (shader.MoveNext())
                 {
                     if (shader.Current == null) continue;
-                    //Debug.Log($"[KCS] Shader \"{shader.Current.name}\" loaded. Shader supported? {shader.Current.isSupported}");
 
                     switch (shader.Current.name)
                     {
@@ -88,7 +88,7 @@ namespace FFmpegOut
                             break;
 
                         default:
-                            Debug.Log($"[CaptureTools] Unexpected shader : {shader.Current.name}");
+                            CTDebug.Log($"Unexpected shader: {shader.Current.name}");
                             break;
                     }
                 }
@@ -98,7 +98,7 @@ namespace FFmpegOut
             }
             else
             {
-                Debug.Log("[CaptureTools] Error: Found no asset bundle to load");
+                CTDebug.LogError("Found no asset bundle to load");
             }
         }
     }

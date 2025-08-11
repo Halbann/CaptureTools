@@ -1,6 +1,7 @@
 // FFmpegOut - FFmpeg video encoding plugin for Unity
 // https://github.com/keijiro/KlakNDI
 
+using CaptureTools.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,25 +15,17 @@ namespace FFmpegOut
     {
         #region Factory methods
 
-        public static FFmpegSession Create(
-            string name,
-            int width, int height, float frameRate,
-            FFmpegPreset preset, int CRF, string path = ""
-        )
+        public static FFmpegSession Create(string name, int width, int height, float frameRate, int CRF, string path = "")
         {
-            name = DateTime.Now.ToString("yyyy MM dd HHmmss") + (name == "" ? "" : (" " + name));
+            name = DateTime.Now.ToString("yyyy MM dd HHmmss") + (name.Length == 0 ? "" : (" " + name));
 
             string filename = name.Replace(" ", "_");
-            path = path == "" ? filename : Path.Combine(path, filename);
+            path = path.Length == 0 ? filename : Path.Combine(path, filename);
 
-            return CreateWithOutputPath(path, width, height, frameRate, preset, CRF);
+            return CreateWithOutputPath(path, width, height, frameRate, CRF);
         }
 
-        public static FFmpegSession CreateWithOutputPath(
-            string outputPath,
-            int width, int height, float frameRate,
-            FFmpegPreset preset, int CRF
-        )
+        public static FFmpegSession CreateWithOutputPath(string outputPath, int width, int height, float frameRate, int CRF)
         {
             TimeSpan timespan = TimeSpan.FromSeconds(Time.time);
             int ff = (int)Mathf.Floor(frameRate * (timespan.Milliseconds / 1000f));
@@ -146,7 +139,7 @@ namespace FFmpegOut
         ~FFmpegSession()
         {
             if (_pipe != null)
-                Debug.LogError(
+                CTDebug.LogError(
                     "An unfinalized FFmpegCapture object was detected. " +
                     "It should be explicitly closed or disposed " +
                     "before being garbage-collected."
@@ -157,14 +150,14 @@ namespace FFmpegOut
 
         #region Frame readback queue
 
-        List<AsyncGPUReadbackRequest> _readbackQueue =
+        readonly List<AsyncGPUReadbackRequest> _readbackQueue =
             new List<AsyncGPUReadbackRequest>(4);
 
         void QueueFrame(Texture source)
         {
             if (_readbackQueue.Count > 6)
             {
-                Debug.LogWarning("Too many GPU readback requests.");
+                CTDebug.LogWarning("Too many GPU readback requests.");
                 return;
             }
 
@@ -212,7 +205,7 @@ namespace FFmpegOut
                 // Error detection
                 if (req.hasError)
                 {
-                    Debug.LogWarning("GPU readback error was detected.");
+                    CTDebug.LogWarning("GPU readback error was detected.");
                     continue;
                 }
 

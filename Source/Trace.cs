@@ -22,7 +22,7 @@ namespace CaptureTools
         //private static float traceFramerateSlider = 4;
         internal static float traceFramerate = 24;
         internal static float traceInterval;
-        public static float traceStartTime { private set; get; }
+        public static float TraceStartTime { private set; get; }
         internal static int frameCount;
 
         private List<TraceRecorder> traceRecorders;
@@ -46,7 +46,7 @@ namespace CaptureTools
 
             TraceRecorder.recordedFrames = 0;
             frameCount = 0;
-            traceStartTime = Time.time;
+            TraceStartTime = Time.time;
             traceInterval = Mathf.RoundToInt(1f / traceFramerate / Time.fixedUnscaledDeltaTime);
 
             traceRecorders = new List<TraceRecorder>();
@@ -68,7 +68,7 @@ namespace CaptureTools
 
                 mr.material = sphereMat;
 
-                capsule.transform.localScale = capsule.transform.localScale * 6;
+                capsule.transform.localScale *= 6;
                 Destroy(capsule.GetComponent<CapsuleCollider>());
 
                 capsule.transform.SetParent(traceTransform, false);
@@ -215,13 +215,13 @@ namespace CaptureTools
         public static int recordedFrames = 0;
 
         bool recording = false;
-        private List<Vector3> positions = new List<Vector3>();
-        private List<Quaternion> rotations = new List<Quaternion>();
+        private readonly List<Vector3> positions = new List<Vector3>();
+        private readonly List<Quaternion> rotations = new List<Quaternion>();
         private Vector3 posLast = Vector3.zero;
         private Quaternion rotLast = Quaternion.identity;
         internal bool hidePart = false;
         private float recordingTime = 0f;
-        private float recordinginterval = 1 / CaptureTools.traceFramerate;
+        private readonly float recordinginterval = 1 / CaptureTools.traceFramerate;
 
         private Transform centre;
 

@@ -5,6 +5,7 @@ using System.Reflection;
 using UnityEngine;
 
 using Scatterer;
+using CaptureTools.Utils;
 
 namespace CaptureTools
 {
@@ -18,7 +19,7 @@ namespace CaptureTools
 
         public static void SetupCameras(Camera localSpace, Camera scaledSpace, bool doubleAA = false)
         {
-            Debug.Log($"[CaptureTools]: Setting up Scatterer integration on {localSpace.name} and {scaledSpace.name}.");
+            CTDebug.Log($"Setting up Scatterer integration on {localSpace.name} and {scaledSpace.name}.");
 
             if (Scatterer.Scatterer.Instance.mainSettings.useSubpixelMorphologicalAntialiasing)
             {
@@ -59,12 +60,10 @@ namespace CaptureTools
                     var newCloudRenderer = localSpace.GetComponent("Atmosphere.DeferredRaymarchedVolumetricCloudsRenderer");
 
                     initializeMethod?.Invoke(newCloudRenderer, null);
-
-                    Debug.Log($"[CaptureTools]: Successful early initialisation of DeferredRaymarchedVolumetricCloudsRenderer.");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[CaptureTools]: Failed early initialisation of DeferredRaymarchedVolumetricCloudsRenderer: {ex.Message}");
+                    CTDebug.LogError($"Failed early initialisation of DeferredRaymarchedVolumetricCloudsRenderer: {ex.Message}");
                 }
             }
         }
@@ -75,7 +74,7 @@ namespace CaptureTools
 
             if (templateAA == null)
             {
-                Debug.LogError("[CaptureTools]: Failed to copy temporal anti-aliasing from the main camera. Couldn't find existing TAA.");
+                CTDebug.LogError("Failed to copy temporal anti-aliasing from the main camera. Couldn't find existing TAA.");
                 return;
             }
 
@@ -93,7 +92,7 @@ namespace CaptureTools
         {
             if (instance == null || template == null)
             {
-                Debug.LogError($"[CaptureTools]: Failed to copy field {name}. Objects were null.");
+                CTDebug.LogError($"Failed to copy field {name}. Objects were null.");
                 return;
             }
 
@@ -101,7 +100,7 @@ namespace CaptureTools
 
             if (field == null)
             {
-                Debug.LogError($"[CaptureTools]: Failed to copy field {name}. Couldn't find field.");
+                CTDebug.LogError($"Failed to copy field {name}. Couldn't find field.");
                 return;
             }
 
@@ -131,11 +130,11 @@ namespace CaptureTools
                 ConfigNode[] array2 = configNode.GetNodes();
                 for (int j = 0; j < array2.Length; j++)
                 {
-                    ConfigNode _cn = array2[j];
+                    ConfigNode node = array2[j];
                     Scatterer.SunFlare sunFlare = instance.scaledSpaceCamera.gameObject.AddComponent<Scatterer.SunFlare>();
                     try
                     {
-                        sunFlare.Configure(FlightGlobals.Bodies.SingleOrDefault((CelestialBody _cb) => _cb.GetName() == _cn.name), _cn.name, Scatterer.Utils.GetScaledTransform(_cn.name), _cn);
+                        sunFlare.Configure(FlightGlobals.Bodies.SingleOrDefault(cb => cb.GetName() == node.name), node.name, Scatterer.Utils.GetScaledTransform(node.name), node);
                         sunFlare.start();
 
                         // Near camera hook.
@@ -152,7 +151,7 @@ namespace CaptureTools
                         customScaledHook.scaledSpaceCamera = scaledSpace;
                         customScaledHook.useDbufferOnCamera = 0;
 
-                        string sunflareKey = _cn.name + "CaptureTools";
+                        string sunflareKey = node.name + "CaptureTools";
                         Scatterer.Scatterer.Instance.sunflareManager.scattererSunFlares.Add(sunflareKey, sunFlare);
 
                         var helper = scaledSpace.gameObject.AddComponent<SunFlareHelper>();
@@ -161,9 +160,9 @@ namespace CaptureTools
                         helper.customNear = customNearHook;
                         helper.customScaled = customScaledHook;
                     }
-                    catch (Exception ex)
+                    catch (Exception e)
                     {
-                        Destroy(sunFlare);
+                        CTDebug.LogError($"Error while trying to create sunflares: {e.Message}");
                         Destroy(sunFlare);
                     }
                 }

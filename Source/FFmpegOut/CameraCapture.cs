@@ -14,33 +14,10 @@ namespace FFmpegOut
     {
         #region Public properties
 
-        [SerializeField] int _width = 1920;
-
-        public int width {
-            get { return _width; }
-            set { _width = value; }
-        }
-
-        [SerializeField] int _height = 1080;
-
-        public int height {
-            get { return _height; }
-            set { _height = value; }
-        }
-
-        [SerializeField] FFmpegPreset _preset;
-
-        public FFmpegPreset preset {
-            get { return _preset; }
-            set { _preset = value; }
-        }
-
-        [SerializeField] float _frameRate = 60;
-
-        public float frameRate {
-            get { return _frameRate; }
-            set { _frameRate = value; }
-        }
+        public int Width { get; set; } = 1920;
+        public int Height { get; set; } = 1080;
+        FFmpegPreset Preset { get; set; }
+        public float Framerate { get; set; } = 60;
 
         // Capture Tools additions.
 
@@ -77,14 +54,14 @@ namespace FFmpegOut
         int _frameDropCount;
 
         float FrameTime {
-            get { return _startTime + (_frameCount - 0.5f) / _frameRate; }
+            get { return _startTime + ((_frameCount - 0.5f) / Framerate); }
         }
 
         void WarnFrameDrop()
         {
             if (++_frameDropCount != 10) return;
 
-            Debug.LogWarning(
+            CTDebug.LogWarning(
                 "Significant frame droppping was detected. This may introduce " +
                 "time instability into output video. Decreasing the recording " +
                 "frame rate is recommended."
@@ -95,15 +72,10 @@ namespace FFmpegOut
 
         #region MonoBehaviour implementation
 
-        private void Awake()
-        {
-
-        }
-
         void OnValidate()
         {
-            _width = Mathf.Max(8, _width);
-            _height = Mathf.Max(8, _height);
+            Width = Mathf.Max(8, Width);
+            Height = Mathf.Max(8, Height);
         }
 
         void OnDisable()
@@ -182,7 +154,7 @@ namespace FFmpegOut
             // object to keep frames presented on the screen.
             if (camera.targetTexture == null)
             {
-                _tempRT = new RenderTexture(_width, _height, 24, GetTargetFormat(camera));
+                _tempRT = new RenderTexture(Width, Width, 24, GetTargetFormat(camera));
                 _tempRT.antiAliasing = GetAntiAliasingLevel(camera);
                 camera.targetTexture = _tempRT;
                 _blitter = Blitter.CreateInstance(camera);
@@ -195,7 +167,7 @@ namespace FFmpegOut
                     outputName,
                     camera.targetTexture.width,
                     camera.targetTexture.height,
-                    _frameRate, preset, CRF, path
+                    Framerate, CRF, path
                 );
             }
             catch (Exception e)
@@ -216,7 +188,7 @@ namespace FFmpegOut
         {
             var gap = Time.time - FrameTime;
             //var gap = Time.unscaledTime - FrameTime;
-            var delta = 1 / _frameRate;
+            var delta = 1 / Framerate;
 
             if (gap < 0)
             {
@@ -249,7 +221,7 @@ namespace FFmpegOut
                 _session.PushFrame(camera.targetTexture);
 
                 // Compensate the time delay.
-                _frameCount += Mathf.FloorToInt(gap * _frameRate);
+                _frameCount += Mathf.FloorToInt(gap * Framerate);
             }
         }
 

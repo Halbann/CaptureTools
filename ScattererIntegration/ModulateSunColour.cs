@@ -4,7 +4,7 @@ using UnityEngine;
 namespace CaptureTools
 {
     class ModulateSunColour : MonoBehaviour
-    {      
+    {
         public SunlightModulator sunlightModulator;
         private Color originalColour = Color.white;
 

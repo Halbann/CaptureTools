@@ -16,7 +16,7 @@ namespace FFmpegOut
     public sealed class FFmpegPipe : IDisposable
     {
         public static string[] errorKeywords = { "error", "failed", "invalid", "unable", "not found" };
-        private ConcurrentQueue<string> errorQueue = new ConcurrentQueue<string>();
+        private readonly ConcurrentQueue<string> errorQueue = new ConcurrentQueue<string>();
 
         #region Public methods
 
@@ -142,11 +142,13 @@ namespace FFmpegOut
         ~FFmpegPipe()
         {
             if (!_terminate)
-                UnityEngine.Debug.LogError(
+            {
+                CTDebug.LogError(
                     "An unfinalized FFmpegPipe object was detected. " +
                     "It should be explicitly closed or disposed " +
                     "before being garbage-collected."
                 );
+            }
         }
 
         #endregion
@@ -157,10 +159,10 @@ namespace FFmpegOut
         Thread _copyThread;
         Thread _pipeThread;
 
-        AutoResetEvent _copyPing = new AutoResetEvent(false);
-        AutoResetEvent _copyPong = new AutoResetEvent(false);
-        AutoResetEvent _pipePing = new AutoResetEvent(false);
-        AutoResetEvent _pipePong = new AutoResetEvent(false);
+        readonly AutoResetEvent _copyPing = new AutoResetEvent(false);
+        readonly AutoResetEvent _copyPong = new AutoResetEvent(false);
+        readonly AutoResetEvent _pipePing = new AutoResetEvent(false);
+        readonly AutoResetEvent _pipePong = new AutoResetEvent(false);
         bool _terminate;
 
         Queue<NativeArray<byte>> _copyQueue = new Queue<NativeArray<byte>>();
@@ -176,12 +178,10 @@ namespace FFmpegOut
                 string basePath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "CaptureTools", "FFmpeg");
                 UnityEngine.RuntimePlatform platform = UnityEngine.Application.platform;
 
-                if (platform == UnityEngine.RuntimePlatform.OSXPlayer ||
-                    platform == UnityEngine.RuntimePlatform.OSXEditor)
+                if (platform == UnityEngine.RuntimePlatform.OSXPlayer || platform == UnityEngine.RuntimePlatform.OSXEditor)
                     return basePath + "/macOS/ffmpeg";
 
-                if (platform == UnityEngine.RuntimePlatform.LinuxPlayer ||
-                    platform == UnityEngine.RuntimePlatform.LinuxEditor)
+                if (platform == UnityEngine.RuntimePlatform.LinuxPlayer || platform == UnityEngine.RuntimePlatform.LinuxEditor)
                     return basePath + "/Linux/ffmpeg";
 
                 return basePath + "/Windows/ffmpeg.exe";

@@ -211,14 +211,17 @@ namespace CaptureTools
             bool allowHDR = isFlight ? FlightCamera.fetch.mainCamera.allowHDR : EditorCamera.Instance.cam.allowHDR;
             RenderTextureFormat rtFormat = allowHDR ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32;
 
-            mainRenderTexture = new RenderTexture(renderWidth, renderHeight, 24, rtFormat);
-            mainRenderTexture.anisoLevel = 1;
-            mainRenderTexture.antiAliasing = Mathf.Max(QualitySettings.antiAliasing, 1);
-            mainRenderTexture.volumeDepth = 0;
-            mainRenderTexture.useMipMap = false;
-            mainRenderTexture.autoGenerateMips = false;
-            mainRenderTexture.filterMode = FilterMode.Bilinear; //bilinear is used by SMAA?
-            mainRenderTexture.wrapMode = TextureWrapMode.Clamp;
+            mainRenderTexture = new RenderTexture(renderWidth, renderHeight, 24, rtFormat)
+            {
+                anisoLevel = 1,
+                antiAliasing = Mathf.Max(QualitySettings.antiAliasing, 1),
+                volumeDepth = 0,
+                useMipMap = false,
+                autoGenerateMips = false,
+                filterMode = FilterMode.Bilinear, //bilinear is used by SMAA?
+                wrapMode = TextureWrapMode.Clamp
+            };
+
             mainRenderTexture.Create();
 
             List<string> cameraNames = isEditor ? new List<string> { "Main Camera" } : CaptureTools.cameraNames;
@@ -259,7 +262,7 @@ namespace CaptureTools
 
 
             // Place the main camera in its starting position.
-            Camera main = isFlight ? mainCameras[2] : mainCameras.First();
+            Camera main = isFlight ? mainCameras[2] : mainCameras[0];
             Camera flightCamera = isFlight ? FlightCamera.fetch.mainCamera : GetEditorCamera();
 
             // Controls centre and rotation.
@@ -286,8 +289,8 @@ namespace CaptureTools
 
             if (isEditor)
             {
-                mainCameras.First().usePhysicalProperties = true;
-                mainCameras.First().usePhysicalProperties = false;
+                mainCameras[0].usePhysicalProperties = true;
+                mainCameras[0].usePhysicalProperties = false;
             }
 
             mainCameras.ForEach(c => c.fieldOfView = flightCamera.fieldOfView);
@@ -444,7 +447,7 @@ namespace CaptureTools
             if (flightCamera == null)
                 return;
 
-            Camera main = isFlight ? mainCameras[2] : mainCameras.First();
+            Camera main = isFlight ? mainCameras[2] : mainCameras[0];
             Vessel active = FlightGlobals.ActiveVessel;
 
             bool usePivot = flightCamera.transform.parent?.parent?.name == "main camera pivot";
@@ -847,8 +850,7 @@ namespace CaptureTools
             if (BD.BDLoaded)
             {
                 // Get the AI module so we can check the target.
-                PartModule BDAIModule;
-                setup.hasBDAI = BD.TryGetBDAI(vessel, out BDAIModule);
+                setup.hasBDAI = BD.TryGetBDAI(vessel, out PartModule BDAIModule);
                 setup.BDAIModule = BDAIModule;
 
                 // Add the competition overlay to the main camera.
@@ -877,9 +879,9 @@ namespace CaptureTools
             {
                 // Start recording.
                 CameraCapture camCap = cam.gameObject.AddComponent<CameraCapture>();
-                camCap.frameRate = playbackFramerate;
-                camCap.width = cam.targetTexture.width;
-                camCap.height = cam.targetTexture.height;
+                camCap.Framerate = playbackFramerate;
+                camCap.Width = cam.targetTexture.width;
+                camCap.Height = cam.targetTexture.height;
                 camCap.outputName = fileName;
                 camCap.CRF = Mathf.RoundToInt(CRF);
                 camCap.drawMainUI = mainCamera && drawUIOnMain;
@@ -962,7 +964,7 @@ namespace CaptureTools
             Vector3 vesselCoM;
             Vector3 toTarget;
 
-            List<Vessel> invalids = multiSetups.Select(s => s.vessel).ToList().FindAll(v => !VesselValid(v));
+            List<Vessel> invalids = multiSetups.ConvertAll(s => s.vessel).FindAll(v => !VesselValid(v));
             invalids.ForEach(v => RemoveVessel(v));
 
             int slotsAvailable = (int)shipLimit - multiSetups.Count;
@@ -1327,9 +1329,7 @@ namespace CaptureTools
         {
             Behaviour postProcessLayer = cam.gameObject.GetComponent("PostProcessLayer") as Behaviour;
             if (postProcessLayer != null)
-            {
-                postProcessLayer.enabled = false;
-            }
+                postProcessLayer.enabled = enabled;
         }
 
         public static Quaternion SmoothDampQ(Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)

@@ -70,7 +70,9 @@ namespace CaptureTools
                 selfDestruct = true;
             }
             else
+            {
                 Instance = this;
+            }
 
             buildAnimation = gameObject.AddComponent<BuildAnimation>();
         }
@@ -139,8 +141,6 @@ namespace CaptureTools
             if (!differentPlaybackFramerate && playbackFramerate.Value != Timing.captureFramerate)
                 playbackFramerate.Value = Timing.captureFramerate;
 
-            bool alt = Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr);
-
             // Start main capture keybind.
             if ((Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.AltGr)) && Input.GetKeyDown(RecordingKeycode))
             {
@@ -174,10 +174,12 @@ namespace CaptureTools
         {
             if (clapperStyle == null)
             {
-                clapperStyle = new GUIStyle(GUI.skin.label);
-                clapperStyle.fontSize = 256 * (Screen.height / 540);
-                clapperStyle.fontStyle = FontStyle.Bold;
-                clapperStyle.alignment = TextAnchor.MiddleCenter;
+                clapperStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 256 * (Screen.height / 540),
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter
+                };
             }
 
             int offset = 5 * (Screen.height / 540);

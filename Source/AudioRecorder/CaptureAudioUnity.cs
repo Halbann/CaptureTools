@@ -11,7 +11,7 @@ namespace CaptureTools
         public bool debug = false;
         public bool record = true;
 
-        private AudioRecorder recorder = new AudioRecorder();
+        private readonly AudioRecorder recorder = new AudioRecorder();
         private bool recording = false;
         private static double dspStartTime = 0f;
         private static float startTime = 0f;
@@ -32,7 +32,7 @@ namespace CaptureTools
             {
                 if (record)
                 {
-                    if (path == "")
+                    if (path?.Length == 0)
                         path = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
                     recording = true;
@@ -62,11 +62,13 @@ namespace CaptureTools
                 recorder.RecordFrame();
 
                 if (debug)
-                    Debug.Log(
+                {
+                    CTDebug.Log(
                         $"Count: {Time.frameCount} " +
                         $"DSP: {AudioSettings.dspTime - dspStartTime} " +
                         $"Time: {Time.time - startTime} " +
                         $"Unscaled: {Time.unscaledTime - unscaledStartTime}");
+                }
             }
         }
 

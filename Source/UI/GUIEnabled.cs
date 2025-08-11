@@ -5,7 +5,7 @@ namespace CaptureTools.UI
 {
     public static class GUIEnabled
     {
-        private static Stack<bool> guiState = new Stack<bool>();
+        private static readonly Stack<bool> guiState = new Stack<bool>();
 
         public static void Push(bool state)
         {

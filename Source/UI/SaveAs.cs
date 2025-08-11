@@ -12,7 +12,7 @@ namespace CaptureTools.UI
         public Action<string> onSave;
         public Action onCancel;
         public bool complete = false;
-        
+
         private string text = "";
         private string textTrimmed;
 

@@ -50,8 +50,8 @@ namespace CaptureTools
             buildOrder = parts.OrderBy(p => Vector3.Distance(p.transform.position, root.transform.position)).ToList();
 
             buildOrder = buildOrder.Distinct().ToList();
-            partsVisible = buildOrder.Select(p => false).ToList();
-            originalPositions = buildOrder.Select(p => p.transform.position).ToList();
+            partsVisible = buildOrder.ConvertAll(_ => false);
+            originalPositions = buildOrder.ConvertAll(p => p.transform.position);
             partCoroutines = new Coroutine[buildOrder.Count];
 
             HideStruts(buildOrder, true);
@@ -145,8 +145,7 @@ namespace CaptureTools
 
             List<Vector3> directions = new List<Vector3>() { up, down, left, right, forwards, backwards };
 
-            directions = directions.OrderBy(v => Vector3.Angle(current, v)).ToList();
-            return directions.First();
+            return directions.OrderBy(v => Vector3.Angle(current, v)).First();
         }
 
         private void SetBuildFromRoot(float buildFromRoot)

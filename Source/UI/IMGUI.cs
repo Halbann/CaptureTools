@@ -38,54 +38,54 @@ namespace CaptureTools.UI
         public static Vector2 presetsScrollPosition;
 
         // Private state.
+        private readonly StringBuilder sb = new StringBuilder();
+        private readonly List<FFmpegPreset> presetsSorted = new List<FFmpegPreset>();
         private int windowID;
-        private StringBuilder sb = new StringBuilder();
-        private ApplicationLauncherButton appLauncherButton;
         private bool guiHidden = false;
         private bool loading = false;
         private bool registeredEvents = false;
-        private List<FFmpegPreset> presetsSorted = new List<FFmpegPreset>();
         private SaveAs saveAs = null;
+        private ApplicationLauncherButton appLauncherButton;
 
         // Capture.
-        SettingSlider captureFramerateSlider = new SettingSlider { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
+        private readonly SettingSlider captureFramerateSlider = new SettingSlider { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true };
 
         // Main Smoothing.
-        SettingSlider smoothingSlider = new SettingSlider { name = "Smoothing", min = 0, max = 5f, rounding = 2 };
-        SettingSlider posSmoothingSlider = new SettingSlider { name = "Position", min = 0, max = 2f, rounding = 2, useToggle = true };
-        SettingSlider pivotSmoothingSlider = new SettingSlider { name = "Pivot", min = 0, max = 2f, rounding = 2 };
-        SettingSlider panSmoothingSlider = new SettingSlider { name = "Pan", min = 0, max = 2f, rounding = 2 };
-        SettingSlider distanceSmoothingSlider = new SettingSlider { name = "Distance", min = 0, max = 2f, rounding = 2 };
-        SettingSlider zoomSmoothingSlider = new SettingSlider { name = "Zoom", min = 0, max = 2f, rounding = 2 };
+        private readonly SettingSlider smoothingSlider = new SettingSlider { name = "Smoothing", min = 0, max = 5f, rounding = 2 };
+        private readonly SettingSlider posSmoothingSlider = new SettingSlider { name = "Position", min = 0, max = 2f, rounding = 2, useToggle = true };
+        private readonly SettingSlider pivotSmoothingSlider = new SettingSlider { name = "Pivot", min = 0, max = 2f, rounding = 2 };
+        private readonly SettingSlider panSmoothingSlider = new SettingSlider { name = "Pan", min = 0, max = 2f, rounding = 2 };
+        private readonly SettingSlider distanceSmoothingSlider = new SettingSlider { name = "Distance", min = 0, max = 2f, rounding = 2 };
+        private readonly SettingSlider zoomSmoothingSlider = new SettingSlider { name = "Zoom", min = 0, max = 2f, rounding = 2 };
 
         // Multicam.
-        SettingSlider shipLimitSlider = new SettingSlider { name = "Ship Limit", min = 1, max = 16, rounding = 0 };
-        SettingSlider cameraFovSlider = new SettingSlider { name = "Camera FOV", min = 2, max = 90, rounding = 1 };
-        SettingSlider cameraHeightSlider = new SettingSlider { name = "Camera Height", min = 0, max = 20, rounding = 1 };
-        SettingSlider cameraSlideSlider = new SettingSlider { name = "Camera Slide", min = 0, max = 20, rounding = 1 };
-        SettingSlider cameraDistanceSlider = new SettingSlider { name = "Camera Distance", min = 10, max = 200, rounding = 1 };
-        SettingSlider targetDelaySlider = new SettingSlider { name = "Target Delay", min = 0, max = 5, rounding = 1 };
-        SettingSlider multicamSmoothingSlider = new SettingSlider { name = "Smoothing", min = 0, max = 5, rounding = 2 };
+        private readonly SettingSlider shipLimitSlider = new SettingSlider { name = "Ship Limit", min = 1, max = 16, rounding = 0 };
+        private readonly SettingSlider cameraFovSlider = new SettingSlider { name = "Camera FOV", min = 2, max = 90, rounding = 1 };
+        private readonly SettingSlider cameraHeightSlider = new SettingSlider { name = "Camera Height", min = 0, max = 20, rounding = 1 };
+        private readonly SettingSlider cameraSlideSlider = new SettingSlider { name = "Camera Slide", min = 0, max = 20, rounding = 1 };
+        private readonly SettingSlider cameraDistanceSlider = new SettingSlider { name = "Camera Distance", min = 10, max = 200, rounding = 1 };
+        private readonly SettingSlider targetDelaySlider = new SettingSlider { name = "Target Delay", min = 0, max = 5, rounding = 1 };
+        private readonly SettingSlider multicamSmoothingSlider = new SettingSlider { name = "Smoothing", min = 0, max = 5, rounding = 2 };
 
         // Trace.
-        SettingSlider traceFramerateSlider = new SettingSlider { name = "Trace Frame Rate", min = 1, max = 50, rounding = 0 };
+        private readonly SettingSlider traceFramerateSlider = new SettingSlider { name = "Trace Frame Rate", min = 1, max = 50, rounding = 0 };
 
         // Animation.
-        SettingSlider buildTimeSlider = new SettingSlider { name = "Build Duration", min = 1, max = 60, rounding = 2 };
-        SettingSlider buildPartSpeedSlider = new SettingSlider { name = "Move Time", min = 0, max = 3f, rounding = 2 };
+        private readonly SettingSlider buildTimeSlider = new SettingSlider { name = "Build Duration", min = 1, max = 60, rounding = 2 };
+        private readonly SettingSlider buildPartSpeedSlider = new SettingSlider { name = "Move Time", min = 0, max = 3f, rounding = 2 };
 
         // Encoding.
-        SettingSlider crfSlider = new SettingSlider { name = "CRF", min = 10, max = 30, rounding = 0, softClamp = true };
-        SettingSlider playbackFramerateSlider = new SettingSlider { name = "Playback Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
+        private readonly SettingSlider crfSlider = new SettingSlider { name = "CRF", min = 10, max = 30, rounding = 0, softClamp = true };
+        private readonly SettingSlider playbackFramerateSlider = new SettingSlider { name = "Playback Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
 
         // Timing.
-        SettingSlider captureFramerateSliderToggle = new SettingSlider { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
-        SettingSlider timescaleSlider = new SettingSlider { name = "Time Scale", rounding = 3, useToggle = true };
-        SettingSlider maxDeltaTimeSlider = new SettingSlider { name = "Max Delta Time", min = 0.02f, max = 0.1f, rounding = 2, useToggle = true };
-        SettingSlider fixedDeltaTimeSlider = new SettingSlider { name = "Fixed Delta Time", min = 0.02f, max = 0.1f, rounding = 2, useToggle = true };
+        private readonly SettingSlider captureFramerateSliderToggle = new SettingSlider { name = "Capture Frame Rate", min = 24, max = 120, rounding = 0, softClamp = true, useToggle = true };
+        private readonly SettingSlider timescaleSlider = new SettingSlider { name = "Time Scale", rounding = 3, useToggle = true };
+        private readonly SettingSlider maxDeltaTimeSlider = new SettingSlider { name = "Max Delta Time", min = 0.02f, max = 0.1f, rounding = 2, useToggle = true };
+        private readonly SettingSlider fixedDeltaTimeSlider = new SettingSlider { name = "Fixed Delta Time", min = 0.02f, max = 0.1f, rounding = 2, useToggle = true };
 
         // HDRI.
-        SettingSlider sunBrightnessSlider = new SettingSlider { name = "Sun Brightness", min = 0, max = 500, rounding = 1 };
+        private readonly SettingSlider sunBrightnessSlider = new SettingSlider { name = "Sun Brightness", min = 0, max = 500, rounding = 1 };
 
 
         public enum UISection
@@ -157,7 +157,7 @@ namespace CaptureTools.UI
 
             if (GUI.Button(new Rect(windowRect.width - (18 * 3), 2, 16, 16), "?", Styles.smallTextButtonStyle))
             {
-                string wikiURL = @"https://github.com/Halbann/CaptureTools/wiki/";
+                string wikiURL = "https://github.com/Halbann/CaptureTools/wiki/";
                 Dictionary<UISection, string> sectionPageMap = new Dictionary<UISection, string>
                 {
                     { UISection.Capture, "Capture" },
@@ -219,9 +219,9 @@ namespace CaptureTools.UI
 
             // Frame of reference.
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Sync: ");
+            GUILayout.Label("Sync: ");
             string[] syncStrings = new string[] { "Physics", "Rendering" };
-            CaptureTools.useFixedUpdate = 0 == GUILayout.SelectionGrid(CaptureTools.useFixedUpdate ? 0 : 1, syncStrings, 2);
+            CaptureTools.useFixedUpdate = GUILayout.SelectionGrid(CaptureTools.useFixedUpdate ? 0 : 1, syncStrings, 2) == 0;
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
 
@@ -239,14 +239,14 @@ namespace CaptureTools.UI
                 // todo: move this out of UI.
                 if (!registeredEvents)
                 {
-                    Action onPresetsChanged = () =>
+                    void OnPresetsChanged()
                     {
                         presetsSorted.Clear();
                         presetsSorted.AddRange(FFmpegPresetLoader.presets.Values.OrderBy(p => p.Name));
-                    };
+                    }
 
-                    FFmpegPresetLoader.OnPresetChanged += onPresetsChanged;
-                    onPresetsChanged();
+                    FFmpegPresetLoader.OnPresetChanged += OnPresetsChanged;
+                    OnPresetsChanged();
                     registeredEvents = true;
                 }
 
@@ -339,9 +339,8 @@ namespace CaptureTools.UI
                             showPresetsList = false;
                         }
 
-                        if (!string.IsNullOrEmpty(preset.path))
-                            if (GUILayout.Button("\\", GUILayout.Width(16)))
-                                Application.OpenURL(preset.path);
+                        if (!string.IsNullOrEmpty(preset.path) && GUILayout.Button("\\", GUILayout.Width(16)))
+                            Application.OpenURL(preset.path);
 
                         GUILayout.EndHorizontal();
                     }
@@ -356,14 +355,13 @@ namespace CaptureTools.UI
 
                 GUILayout.BeginHorizontal();
 
-                const string ffmpegURL = @"https://www.ffmpeg.org/ffmpeg-all.html";
+                const string ffmpegURL = "https://www.ffmpeg.org/ffmpeg-all.html";
                 if (GUILayout.Button("Open FFmpeg Docs"))
                     Application.OpenURL(ffmpegURL);
 
                 const string encoderBatURL = "GameData\\CaptureTools\\FFmpeg\\Windows\\getInfoAboutEncoders.bat";
-                if (GUILayout.Button("Get Encoder Info"))
-                    if (File.Exists(encoderBatURL))
-                        Application.OpenURL(encoderBatURL);
+                if (GUILayout.Button("Get Encoder Info") && File.Exists(encoderBatURL))
+                    Application.OpenURL(encoderBatURL);
 
                 GUILayout.EndHorizontal();
 
@@ -404,7 +402,7 @@ namespace CaptureTools.UI
                     string restext = GUILayout.TextField(CaptureTools.mainHeight.ToString(), GUILayout.Width(38));
                     if (int.TryParse(restext, out int result2))
                         CaptureTools.mainHeight = result2;
-                    else if (restext == "")
+                    else if (restext?.Length == 0)
                         CaptureTools.mainHeight = 1080;
 
                     GUILayout.FlexibleSpace();
@@ -419,7 +417,7 @@ namespace CaptureTools.UI
                         string text = GUILayout.TextField(value.ToString(), GUILayout.Width(38));
                         if (float.TryParse(text, out float result))
                             value = result;
-                        else if (text == "")
+                        else if (text?.Length == 0)
                             value = 1;
                     }
 
@@ -484,7 +482,7 @@ namespace CaptureTools.UI
                 GUI.enabled = false;
 
             // Record button.
-            if (RecordButton(ct.CapturingTrace, CaptureTools.traceStartTime, false))
+            if (RecordButton(ct.CapturingTrace, CaptureTools.TraceStartTime, false))
             {
                 if (ct.CapturingTrace)
                     ct.StopPartCapture();
@@ -494,10 +492,12 @@ namespace CaptureTools.UI
 
             // File size.
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Est. File Size: ");
+            GUILayout.Label("Est. File Size: ");
 
             if (TraceRecorder.recordedFrames == 0)
+            {
                 GUILayout.Label("0 MB");
+            }
             else
             {
                 float estimatedFileSizeMB = (0.06947368421f * TraceRecorder.recordedFrames) / 1000f;
@@ -512,7 +512,7 @@ namespace CaptureTools.UI
             {
                 // Frame of reference.
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"Frame of Reference: ");
+                GUILayout.Label("Frame of Reference: ");
                 string[] frameStrings = Enum.GetNames(typeof(CaptureTools.TraceFrame));
                 CaptureTools.traceFrameOfReference = (CaptureTools.TraceFrame)GUILayout.SelectionGrid((int)CaptureTools.traceFrameOfReference, frameStrings, frameStrings.Length);
                 GUILayout.FlexibleSpace();
@@ -531,7 +531,7 @@ namespace CaptureTools.UI
 
             (Timing.maxDeltaTime.constrained.Value, Timing.maxDeltaTime.Apply) = maxDeltaTimeSlider.Update(Timing.maxDeltaTime, Timing.maxDeltaTime.Apply);
             (Timing.fixedDeltaTime.constrained.Value, Timing.fixedDeltaTime.Apply) = fixedDeltaTimeSlider.Update(Timing.fixedDeltaTime, Timing.fixedDeltaTime.Apply);
-            
+
             (float framerateValue, bool apply) = captureFramerateSliderToggle.Update(Timing.captureFramerate, Timing.captureFramerate.Apply);
             Timing.captureFramerate.constrained.Value = RoundFramerate(framerateValue);
             Timing.captureFramerate.Apply = apply;
@@ -639,7 +639,7 @@ namespace CaptureTools.UI
             string text = GUILayout.TextField(HDRI.width.ToString(), Styles.textBoxStyle, GUILayout.Width(38));
             if (int.TryParse(text, out int result))
                 HDRI.width = result;
-            else if (text == "")
+            else if (text?.Length == 0)
                 HDRI.width = 2048;
 
             GUILayout.Space(3);
@@ -686,7 +686,9 @@ namespace CaptureTools.UI
             sb.Clear();
 
             if (!recording)
+            {
                 sb.Append("○ Record");
+            }
             else
             {
                 if (!preview)

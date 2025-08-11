@@ -9,7 +9,7 @@ namespace CaptureTools
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
     class Addons : MonoBehaviour
     {
-        private static HashSet<string> loadedAddons = new HashSet<string>();
+        private static readonly HashSet<string> loadedAddons = new HashSet<string>();
 
         protected void Awake()
         {
@@ -91,7 +91,7 @@ namespace CaptureTools
                 string filename = Path.GetFileName(addonPath);
                 string addonName = Path.GetFileNameWithoutExtension(addonPath);
 
-                if (AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.dllName.Equals(addonName, System.StringComparison.OrdinalIgnoreCase)) != null)
+                if (AssemblyLoader.loadedAssemblies.Any(a => a.dllName.Equals(addonName, System.StringComparison.OrdinalIgnoreCase)))
                     throw new System.Exception($"{filename} already loaded.");
 
                 if (!File.Exists(addonPath))

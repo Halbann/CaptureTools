@@ -3,6 +3,8 @@
 
 namespace FFmpegOut
 {
+    // todo: remove.
+
     public enum FFmpegPreset
     {
         H264Default,

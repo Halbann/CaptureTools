@@ -15,7 +15,7 @@ namespace CaptureTools
         // todo: consider moving to MonoBehaviour (auto update, auto reset to defaults on destruction, but what to do about keeping values between scenes?).
 
         public float TimeRatio { private set; get; }
-        private Queue<float> ptrRollingQ = new Queue<float>();
+        private readonly Queue<float> ptrRollingQ = new Queue<float>();
         private float ptrLast;
 
         public const int minFramerate = 1;
@@ -31,8 +31,8 @@ namespace CaptureTools
             public readonly Constrained constrained;
             private float defaultValue;
             private bool apply;
-            private Func<float> getter;
-            private Action<float> setter;
+            private readonly Func<float> getter;
+            private readonly Action<float> setter;
 
             public bool Apply
             {
@@ -49,7 +49,9 @@ namespace CaptureTools
                         setter(constrained);
                     }
                     else
+                    {
                         setter(defaultValue);
+                    }
                 }
             }
 
