@@ -16,6 +16,7 @@ namespace CaptureTools
 
         public static CaptureTools Instance;
         public ICaptureToolsUI ui;
+        public BuildAnimation buildAnimation;
         private bool selfDestruct = false;
 
         public static string filePath = "Captures";
@@ -69,9 +70,9 @@ namespace CaptureTools
                 selfDestruct = true;
             }
             else
-            {
                 Instance = this;
-            }
+
+            buildAnimation = gameObject.AddComponent<BuildAnimation>();
         }
 
         internal void Start()
@@ -212,6 +213,8 @@ namespace CaptureTools
 
             if (CaptureMulti)
                 CaptureMulti = false;
+
+            Destroy(buildAnimation);
         }
 
         #endregion
@@ -279,8 +282,8 @@ namespace CaptureTools
             settings.SetValue("HDRIHideKerbalsInEditor", HDRI.hideKerbalsInEditor, true);
 
             // Build animation.
-            settings.SetValue("buildPartSpeed", buildPartSpeed, true);
-            settings.SetValue("buildTime", buildTime, true);
+            settings.SetValue("buildPartSpeed", BuildAnimation.buildPartSpeed, true);
+            settings.SetValue("buildTime", BuildAnimation.buildTime, true);
 
             // UI
             settings.SetValue("windowPosition", IMGUI.windowRect.position, true);
@@ -356,8 +359,8 @@ namespace CaptureTools
             settings.TryGetValue("HDRIHideKerbalsInEditor", ref HDRI.hideKerbalsInEditor);
 
             // Build Animation
-            settings.TryGetValue("buildPartSpeed", ref buildPartSpeed);
-            settings.TryGetValue("buildTime", ref buildTime);
+            settings.TryGetValue("buildPartSpeed", ref BuildAnimation.buildPartSpeed);
+            settings.TryGetValue("buildTime", ref BuildAnimation.buildTime);
 
             // UI
             Vector2 windowPosition = IMGUI.windowRect.position;

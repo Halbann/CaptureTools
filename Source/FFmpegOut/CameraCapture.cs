@@ -152,7 +152,7 @@ namespace FFmpegOut
             }
         }
 
-        protected void Update()
+        private void Update()
         {
             if (!enabled)
                 return;

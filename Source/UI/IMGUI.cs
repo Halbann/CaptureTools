@@ -600,20 +600,17 @@ namespace CaptureTools.UI
                 "Can only be run while the game is paused or time is frozen.");
             GUILayout.EndVertical();
 
-            //if (Time.timeScale != 0f && ct.buildCoroutine == null)
-            //    GUI.enabled = false;
-
-            bool disableGUI = Time.timeScale != 0f && !ct.Building;
+            bool disableGUI = Time.timeScale != 0f && !ct.buildAnimation.Playing;
             GUIEnabled.Push(!disableGUI);
 
-            bool building = ct.Building;
+            bool building = ct.buildAnimation.Playing;
             if (GUILayout.Button(building ? "Stop" : "Play"))
-                ct.Building = !building;
+                ct.buildAnimation.Playing = !building;
 
             GUIEnabled.Pop();
 
-            buildTimeSlider.Update(ref ct.buildTime);
-            buildPartSpeedSlider.Update(ref ct.buildPartSpeed);
+            buildTimeSlider.Update(ref BuildAnimation.buildTime);
+            buildPartSpeedSlider.Update(ref BuildAnimation.buildPartSpeed);
 
             GUILayout.EndVertical();
         }
@@ -654,7 +651,7 @@ namespace CaptureTools.UI
             // Capture HDRI.
 
             if (GUILayout.Button("Capture HDRI"))
-                ct.CaptureHDRI();
+                HDRI.Capture();
 
             GUILayout.EndVertical();
         }

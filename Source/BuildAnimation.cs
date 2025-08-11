@@ -1,33 +1,29 @@
-﻿using KSP.UI;
-using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace CaptureTools
 {
-    partial class CaptureTools
+    public class BuildAnimation : MonoBehaviour
     {
         // Build animation.
         private List<Part> buildOrder = new List<Part>();
-        public float buildTime = 5f;
         private Coroutine buildCoroutine;
         private Coroutine[] partCoroutines;
         private List<Vector3> originalPositions = new List<Vector3>();
         private List<bool> partsVisible = new List<bool>();
 
-        public float buildPartSpeed = 0.1f;
-        public float buildPartMaxSpeed = 500f;
+        public static float buildTime = 5f;
+        public static float buildPartSpeed = 0.1f;
+        public static float buildPartMaxSpeed = 500f;
 
-        public bool Building
+        public bool Playing
         {
             get => buildCoroutine != null;
             set
             {
-                if (Building == value)
+                if (Playing == value)
                     return;
 
                 if (value)
@@ -36,8 +32,11 @@ namespace CaptureTools
                     StopBuild();
             }
         }
-        
-        #region Animate Build
+
+        protected void OnDestroy()
+        {
+            Playing = false;
+        }
 
         private IEnumerator StartBuild(float time)
         {
@@ -48,7 +47,7 @@ namespace CaptureTools
             Part root = HighLogic.LoadedSceneIsEditor ? EditorLogic.RootPart : activeVessel.rootPart;
 
             parts = parts.Where(p => p.transform.parent == null).ToList();
-            buildOrder = parts.OrderBy(p => DistanceFromRoot(p, root)).ToList();
+            buildOrder = parts.OrderBy(p => Vector3.Distance(p.transform.position, root.transform.position)).ToList();
 
             buildOrder = buildOrder.Distinct().ToList();
             partsVisible = buildOrder.Select(p => false).ToList();
@@ -57,11 +56,11 @@ namespace CaptureTools
 
             HideStruts(buildOrder, true);
 
-            var awayFromParent = new List<Vector3>();
+            List<Vector3> awayFromParent = new List<Vector3>();
             Vector3 away;
             Transform active = HighLogic.LoadedSceneIsEditor ? root.transform : activeVessel.ReferenceTransform;
 
-            foreach (var part in buildOrder)
+            foreach (Part part in buildOrder)
             {
                 if (part == root)
                 {
@@ -94,19 +93,12 @@ namespace CaptureTools
                 yield return null;
             }
 
-            //for (int i = 0; i < buildOrder.Count; i++)
-            //{
-            //    buildOrder[i].transform.position = originalPositions[i];
-            //}
-
-            //buildCoroutine = null;
-
             StopBuild();
         }
 
-        public void StopBuild()
+        private void StopBuild()
         {
-            foreach (var coroutine in partCoroutines)
+            foreach (Coroutine coroutine in partCoroutines)
             {
                 if (coroutine != null)
                     StopCoroutine(coroutine);
@@ -130,28 +122,28 @@ namespace CaptureTools
             buildCoroutine = null;
         }
 
-        void HideStruts(List<Part> parts, bool hide)
+        private void HideStruts(List<Part> parts, bool hide)
         {
-            var struts = parts.FindAll(p => p.name == "strutConnector" || p.name == "fuelLine");
+            List<Part> struts = parts.FindAll(p => p.name == "strutConnector" || p.name == "fuelLine");
 
-            foreach (var strut in struts)
+            foreach (Part strut in struts)
             {
-                foreach (var mr in strut.FindModelMeshRenderersCached())
+                foreach (MeshRenderer mr in strut.FindModelMeshRenderersCached())
                     mr.enabled = !hide;
 
-                foreach (var smr in strut.FindModelSkinnedMeshRenderersCached())
+                foreach (SkinnedMeshRenderer smr in strut.FindModelSkinnedMeshRenderersCached())
                     smr.enabled = !hide;
             }
         }
 
-        Vector3 RoundVector6(Vector3 up, Vector3 forwards, Vector3 current)
+        private Vector3 RoundVector6(Vector3 up, Vector3 forwards, Vector3 current)
         {
             Vector3 down = up * -1;
             Vector3 backwards = forwards * -1;
             Vector3 right = Vector3.Cross(up, forwards).normalized;
             Vector3 left = right * -1;
 
-            var directions = new List<Vector3>() { up, down, left, right, forwards, backwards };
+            List<Vector3> directions = new List<Vector3>() { up, down, left, right, forwards, backwards };
 
             directions = directions.OrderBy(v => Vector3.Angle(current, v)).ToList();
             return directions.First();
@@ -188,50 +180,18 @@ namespace CaptureTools
             float startTime = Time.unscaledTime;
             Vector3 velocity = Vector3.zero;
 
-            //Transform parent = part.transform.parent;
-            //part.transform.parent = null;
-
             if (part.name != "strutConnector" && part.name != "fuelLine")
                 buildOrder[partIndex].FindModelMeshRenderersCached().ForEach(mr => mr.enabled = true);
 
             while (Vector3.Distance(part.transform.position, originalPos) > 0.002f)
             {
-                //part.transform.position = Vector3.Lerp(part.transform.position, originalPos, Time.unscaledDeltaTime * partAnimateTime);
-                part.transform.position = Vector3.SmoothDamp(part.transform.position, originalPos, ref velocity, 
+                part.transform.position = Vector3.SmoothDamp(part.transform.position, originalPos, ref velocity,
                     buildPartSpeed, buildPartMaxSpeed, Time.unscaledDeltaTime);
                 yield return null;
             }
 
-            //part.transform.parent = parent;
             part.transform.position = originalPos;
             partCoroutines[partIndex] = null;
         }
-
-        private int StepsFromRoot(Part part)
-        {
-            Part currentPart = part;
-            int steps = 0;
-            Part root = FlightGlobals.ActiveVessel.rootPart;
-
-            while (currentPart != root)
-            {
-                currentPart = currentPart.parent;
-                steps++;
-            }
-
-            return steps;
-        }
-
-        private float DistanceFromCoM(Part part)
-        {
-            return Vector3.Distance(part.transform.position, FlightGlobals.ActiveVessel.CoM);
-        }
-
-        private float DistanceFromRoot(Part part, Part root)
-        {
-            return Vector3.Distance(part.transform.position, root.transform.position);
-        }
-
-        #endregion
     }
 }

@@ -17,9 +17,10 @@ namespace CaptureTools
         public static int width = 2048;
         public static float sunBrightness = 200;
         public static bool hideKerbalsInEditor = true;
-        public static void CaptureHDRI() => CaptureHDRI(width, sunBrightness, hideKerbalsInEditor);
 
-        public static void CaptureHDRI(int width, float sunBrightness = 200, bool hideKerbalsInEditor = false, bool disablePostProcessing = true)
+        public static void Capture() => Capture(width, sunBrightness, hideKerbalsInEditor);
+
+        public static void Capture(int width, float sunBrightness = 200, bool hideKerbalsInEditor = false, bool disablePostProcessing = true)
         {
             Color sunColourOriginal = GetSunColour();
             HDRI.SetSunColour(new Color(sunBrightness, sunBrightness, sunBrightness, 1));
