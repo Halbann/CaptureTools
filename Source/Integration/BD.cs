@@ -1,36 +1,32 @@
-﻿using System;
+﻿using CaptureTools.Utils;
+using System;
 using System.Reflection;
-
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using CaptureTools.Utils;
 
 namespace CaptureTools.Integration
 {
     internal static class BD
     {
-        internal static bool checkedForBD = false;
-        internal static bool BDLoaded = false;
-        internal static FieldInfo bdTargetField;
+        internal static bool checkedFor = false;
+        internal static bool loaded = false;
+        internal static FieldInfo targetField;
 
-        internal static void BDArmouryCheck()
+        internal static void Check()
         {
-            if (checkedForBD)
+            if (checkedFor)
                 return;
 
-            checkedForBD = true;
+            checkedFor = true;
 
             try
             {
-                foreach (var assy in AssemblyLoader.loadedAssemblies)
+                foreach (AssemblyLoader.LoadedAssembly assy in AssemblyLoader.loadedAssemblies)
                 {
                     if (assy.assembly.FullName.Contains("BDArmory"))
                     {
-                        BDLoaded = true;
+                        loaded = true;
 
-                        var aiModuleType = assy.assembly.GetType("BDArmory.Control.BDGenericAIBase");
-                        bdTargetField = GetAITargetField(aiModuleType);
+                        Type aiModuleType = assy.assembly.GetType("BDArmory.Control.BDGenericAIBase");
+                        targetField = GetAITargetField(aiModuleType);
 
                         return;
                     }
@@ -42,7 +38,7 @@ namespace CaptureTools.Integration
             }
         }
 
-        public static bool TryGetBDAI(Vessel v, out PartModule AIModule)
+        public static bool TryGetAI(Vessel v, out PartModule AIModule)
         {
             if (v)
             {
@@ -77,7 +73,7 @@ namespace CaptureTools.Integration
                 return null;
 
             FieldInfo[] fields = aiModType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var f in fields)
+            foreach (FieldInfo f in fields)
             {
                 if (f.Name == "targetVessel")
                 {

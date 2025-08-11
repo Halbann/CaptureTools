@@ -116,8 +116,10 @@
     <Compile Include="AudioRecorder\CaptureAudioUnity.cs" />
     <Compile Include="AudioRecorder\AudioInput.cs" />
     <Compile Include="AudioRecorder\AudioRecorder.cs" />
+    <Compile Include="Integration\CameraTools.cs" />
     <Compile Include="EditorZoom.cs" />
     <Compile Include="HDRI.cs" />
+    <Compile Include="Integration\PostProcessing.cs" />
     <Compile Include="Timing.cs" />
     <Compile Include="Trace\Tracer.cs" />
     <Compile Include="UI\ICaptureToolsUI.cs" />

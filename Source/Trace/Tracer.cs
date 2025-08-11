@@ -62,8 +62,8 @@ namespace CaptureTools.Trace
                 recorders.Add(PartRecorder.Create(p, Centre));
 
             // Register events.
-            GameEvents.onPartDie.Add(TraceOnPartDie);
-            GameEvents.onFloatingOriginShift.Add(TraceOnFloatingOriginShift);
+            GameEvents.onPartDie.Add(OnPartDie);
+            GameEvents.onFloatingOriginShift.Add(OnFloatingOriginShift);
 
             if (frameOfReference == ReferenceFrame.World && ActiveVesselInSpace())
             {
@@ -109,15 +109,15 @@ namespace CaptureTools.Trace
             recording = false;
 
             // Unregister events.
-            GameEvents.onPartDie.Remove(TraceOnPartDie);
-            GameEvents.onFloatingOriginShift.Remove(TraceOnFloatingOriginShift);
+            GameEvents.onPartDie.Remove(OnPartDie);
+            GameEvents.onFloatingOriginShift.Remove(OnFloatingOriginShift);
 
             // Destroy the centre.
             if (Centre != null)
                 Destroy(Centre.gameObject);
         }
 
-        private void TraceOnFloatingOriginShift(Vector3d offset, Vector3d nonFrame)
+        private void OnFloatingOriginShift(Vector3d offset, Vector3d nonFrame)
         {
             if (!ActiveVesselInSpace())
             {
@@ -126,7 +126,7 @@ namespace CaptureTools.Trace
             }
         }
 
-        private void TraceOnPartDie(Part p)
+        private void OnPartDie(Part p)
         {
             PartRecorder rec = p.gameObject.GetComponent<PartRecorder>();
 

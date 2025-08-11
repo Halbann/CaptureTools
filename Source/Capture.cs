@@ -250,8 +250,7 @@ namespace CaptureTools
 
                 // All three cameras write to the same render rexture.
                 cam.targetTexture = mainRenderTexture;
-
-                CopyCameraPostProcess(template, cam);
+                PostProcessing.Copy(template, cam);
             }
 
             if (isFlight)
@@ -570,11 +569,10 @@ namespace CaptureTools
                 }
 
                 // Instant reset when starting a path in Camera Tools.
-                if (cameraToolsLoaded
-                    && (Input.GetKeyDown(cameraToolsCameraKey)))
+                if (CameraTools.loaded && Input.GetKeyDown(CameraTools.cameraKey))
                 {
-                    FieldInfo toolModeField = camToolsInstance.GetType().GetField("toolMode", BindingFlags.Public | BindingFlags.Instance);
-                    int toolMode = (int)toolModeField.GetValue(camToolsInstance);
+                    FieldInfo toolModeField = CameraTools.type.GetField("toolMode", BindingFlags.Public | BindingFlags.Instance);
+                    int toolMode = (int)toolModeField.GetValue(CameraTools.instance);
 
                     // Only in pathing mode.
                     if (toolMode == 2)
@@ -799,8 +797,7 @@ namespace CaptureTools
 
                 // All three cameras write to the same render rexture.
                 cam.targetTexture = renderTexture;
-
-                CopyCameraPostProcess(template, cam);
+                PostProcessing.Copy(template, cam);
             }
 
             // Galaxy cam should clear to black.
@@ -847,10 +844,10 @@ namespace CaptureTools
                 pivot = pivot.transform,
             };
 
-            if (BD.BDLoaded)
+            if (BD.loaded)
             {
                 // Get the AI module so we can check the target.
-                setup.hasBDAI = BD.TryGetBDAI(vessel, out PartModule BDAIModule);
+                setup.hasBDAI = BD.TryGetAI(vessel, out PartModule BDAIModule);
                 setup.BDAIModule = BDAIModule;
 
                 // Add the competition overlay to the main camera.
@@ -1168,9 +1165,9 @@ namespace CaptureTools
 
         private static void GetMulticamTarget(MultiSetup setup, out bool hasTarget, out Vector3 targetPos)
         {
-            if (BD.BDLoaded && setup.hasBDAI && setup.BDAIModule != null)
+            if (BD.loaded && setup.hasBDAI && setup.BDAIModule != null)
             {
-                Vessel bdTarget = (Vessel)BD.bdTargetField.GetValue(setup.BDAIModule);
+                Vessel bdTarget = (Vessel)BD.targetField.GetValue(setup.BDAIModule);
 
                 // We want a latency of a few seconds before switching OFF a BD target to any kind of other target or no target.
                 // This is so we can always see it for a few seconds after it's been destroyed.
@@ -1295,42 +1292,7 @@ namespace CaptureTools
         }
 
         #endregion
-
         #region Helpers
-
-        private static void CopyCameraPostProcess(Camera template, Camera camera)
-        {
-            // todo: should really be in a TUFX integration module.
-            // drop support for K3SP, it never worked anyway.
-
-            Component templateLayer = template.gameObject.GetComponent("PostProcessLayer");
-            if (templateLayer != null)
-            {
-                Type layerType = templateLayer.GetType();
-                Component layer = camera.gameObject.AddComponent(layerType);
-
-                // set the volume layer.
-                FieldInfo volumeLayer = layerType.GetField("volumeLayer", BindingFlags.Public | BindingFlags.Instance);
-                volumeLayer.SetValue(layer, volumeLayer.GetValue(templateLayer));
-
-                // call Init(resources) function on the layer.
-                FieldInfo resources = layerType.GetField("m_Resources", BindingFlags.NonPublic | BindingFlags.Instance);
-                layerType.GetMethod("Init", BindingFlags.Public | BindingFlags.Instance).Invoke(layer, new object[] { resources.GetValue(templateLayer) });
-            }
-        }
-
-        public static bool GetCameraPostProcessEnabled(Camera cam)
-        {
-            Behaviour postProcessLayer = cam.gameObject.GetComponent("PostProcessLayer") as Behaviour;
-            return postProcessLayer != null && postProcessLayer.enabled;
-        }
-
-        public static void ToggleCameraPostProcess(Camera cam, bool enabled)
-        {
-            Behaviour postProcessLayer = cam.gameObject.GetComponent("PostProcessLayer") as Behaviour;
-            if (postProcessLayer != null)
-                postProcessLayer.enabled = enabled;
-        }
 
         public static Quaternion SmoothDampQ(Quaternion rot, Quaternion target, ref Quaternion deriv, float time, float maxSpeed, float deltaTime)
         {

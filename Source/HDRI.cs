@@ -1,4 +1,5 @@
-﻿using CaptureTools.Utils;
+﻿using CaptureTools.Integration;
+using CaptureTools.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,9 +47,9 @@ namespace CaptureTools
                     return;
                 }
 
-                bool postProcessingEnabled = CaptureTools.GetCameraPostProcessEnabled(flightCameras.Last());
+                bool postProcessingEnabled = PostProcessing.GetEnabled(flightCameras.Last());
                 if (disablePostProcessing)
-                    flightCameras.ForEach(c => CaptureTools.ToggleCameraPostProcess(c, false));
+                    flightCameras.ForEach(c => PostProcessing.Toggle(c, false));
 
                 // Render each face.
                 foreach (int faceMask in faceMasks)
@@ -63,7 +64,7 @@ namespace CaptureTools
                         flightCam.allowMSAA = true;
 
                         if (disablePostProcessing)
-                            CaptureTools.ToggleCameraPostProcess(flightCam, false);
+                            PostProcessing.Toggle(flightCam, false);
 
                         flightCam.RenderToCubemap(cubemap, faceMask);
 
@@ -73,7 +74,7 @@ namespace CaptureTools
                 }
 
                 if (disablePostProcessing)
-                    flightCameras.ForEach(c => CaptureTools.ToggleCameraPostProcess(c, postProcessingEnabled));
+                    flightCameras.ForEach(c => PostProcessing.Toggle(c, postProcessingEnabled));
             }
             else
             {

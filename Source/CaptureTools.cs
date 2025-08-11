@@ -48,12 +48,6 @@ namespace CaptureTools
         private static int originalTargetFrameRate;
         private static int originalVSyncCount;
 
-        // Camera Tools integration.
-        private bool cameraToolsLoaded = false;
-        private UnityEngine.Object camToolsInstance;
-        private string cameraToolsCameraKey;
-        private string cameraToolsRevertKey;
-
         // Integral UI.
         public bool showClapper = false;
         private static GUIStyle clapperStyle;
@@ -98,9 +92,8 @@ namespace CaptureTools
 
             originalTargetFrameRate = Application.targetFrameRate;
             originalVSyncCount = QualitySettings.vSyncCount;
-
-            CameraToolsCheck();
-            BD.BDArmouryCheck();
+            CameraTools.Check();
+            BD.Check();
 
             // Trace.
             PartRecorder.recordedFrames = 0;
@@ -218,6 +211,7 @@ namespace CaptureTools
                 CaptureMulti = false;
 
             Destroy(buildAnimation);
+            Destroy(trace);
         }
 
         #endregion
@@ -389,40 +383,6 @@ namespace CaptureTools
             {
                 CTDebug.LogError("Failed to parse toggleUIKeycode");
                 return defaultCode;
-            }
-        }
-
-        #endregion
-
-        #region Mod Integration
-
-        private void CameraToolsCheck()
-        {
-            try
-            {
-                foreach (AssemblyLoader.LoadedAssembly assy in AssemblyLoader.loadedAssemblies)
-                {
-                    if (assy.assembly.FullName.Contains("CameraTools"))
-                    {
-                        Type cameraTools = assy.assembly.GetType("CameraTools.CamTools");
-                        camToolsInstance = FindObjectOfType(cameraTools);
-
-                        if (camToolsInstance != null)
-                        {
-                            cameraToolsLoaded = true;
-
-                            FieldInfo cameraKey = cameraTools.GetField("cameraKey", BindingFlags.Public | BindingFlags.Instance);
-                            cameraToolsCameraKey = (string)cameraKey.GetValue(camToolsInstance);
-
-                            FieldInfo revertKey = cameraTools.GetField("revertKey", BindingFlags.Public | BindingFlags.Instance);
-                            cameraToolsRevertKey = (string)revertKey.GetValue(camToolsInstance);
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                CTDebug.LogError($"Failed to get Camera Tools keybinds: {e.Message}");
             }
         }
 
