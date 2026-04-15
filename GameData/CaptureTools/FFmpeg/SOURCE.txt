@@ -1,0 +1,2 @@
+The source for FFmpeg is available at:
+https://git.ffmpeg.org/gitweb/ffmpeg.git

@@ -20,7 +20,7 @@ https://github.com/keijiro
 
 ------------------------------------------
 
-FFmpeg is not part of Capture Tools and is redistributed separately under the GPL. A full copy of the GPL is provided.
+FFmpeg is not part of Capture Tools, although a pre-built executable for Windows is redistributed for convenience. A full copy of the GNU General Public License and a link to FFmpeg's source code are provided.
 
 ------------------------------------------
 
