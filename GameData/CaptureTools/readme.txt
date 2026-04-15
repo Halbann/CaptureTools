@@ -1,7 +1,7 @@
 # Capture Tools 1.4.0 Test 2
 
-Capture tools is paid software that took a lot work to create, please don't send it to anyone who hasn't paid for it. I'd be very grateful if you could refer anyone who might be interested to the gumroad page. Thank you.
-https://halban.gumroad.com/l/CaptureTools
+Download: https://halban.gumroad.com/l/CaptureTools
+Source: https://github.com/Halbann/CaptureTools
 
 The owner's manual covers everything you need to know about using Capture Tools and will hopefully answer any questions you may have. It takes about 15 minutes to read: 
 https://github.com/Halbann/CaptureTools/wiki
